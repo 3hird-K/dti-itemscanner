@@ -13,7 +13,7 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Department of Trade and Industry - Cagayan de Oro",
   description:
-    "The official Department of Trade and Industry - Cagayan de Oro Service Portal for USTP students. Access student services, tracking, and resources online.",
+    "The official Department of Trade and Industry - Cagayan de Oro Service Portal.",
   keywords: [
     "DTI",
     "DTI CDO",
