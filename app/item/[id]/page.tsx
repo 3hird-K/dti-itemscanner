@@ -8,6 +8,10 @@ import { Loader2, Box, MapPin, User, Tag, Calendar, LayoutDashboard } from "luci
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import Logo from "@/assets/image.jpg";
+import LogoDark from "@/assets/image-dark.png";
+
+import Image from "next/image";
 
 export default function PublicItemPage() {
   const { id } = useParams();
@@ -15,6 +19,7 @@ export default function PublicItemPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     async function fetchItem() {
@@ -60,9 +65,35 @@ export default function PublicItemPage() {
       <div className="max-w-2xl w-full">
         {/* Header Block */}
         <div className="text-center mb-8 space-y-3 relative">
-          <div className="inline-flex bg-primary/10 p-3 rounded-full mb-2 border border-primary/20">
+          {/* <div className="inline-flex bg-primary/10 p-3 rounded-full mb-2 border border-primary/20">
             <LayoutDashboard className="w-8 h-8 text-primary" />
-          </div>
+          </div> */}
+
+          {/* Theme-Aware Logo */}
+          
+        <div className="flex justify-center mb-4">
+          {/* <div className="flex justify-center py-2"> */}
+                  {/* Light mode logo */}
+                  <Image
+                    src={Logo}
+                    alt="Logo Light"
+                    width={80}
+                    height={80}
+                    className="block dark:hidden"
+                  />
+
+                  {/* Dark mode logo */}
+                  <Image
+                    src={LogoDark}
+                    alt="Logo Dark"
+                    width={80}
+                    height={80}
+                    className="hidden dark:block"
+                  />
+                {/* </div> */}
+        </div>
+          
+
           <h1 className="text-3xl font-extrabold tracking-tight text-primary">DTI Registry Record</h1>
           <p className="text-muted-foreground text-sm uppercase tracking-widest font-semibold flex items-center justify-center gap-2">
             Verified Physical Asset 
