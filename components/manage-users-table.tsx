@@ -100,14 +100,27 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this profile? Note: Deleting a profile does not delete the core Authentication User, only their linked app data.")) return;
+    if (!confirm("Are you sure you want to completely delete this user? This will remove both the profile AND authentication account permanently.")) return;
     setIsDeleting(id);
-    const { error } = await supabase.from("profiles").delete().eq("id", id);
-    if (!error) {
+    
+    try {
+      const response = await fetch("/api/users/delete-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: id }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast.error("Failed to delete user: " + (errorData.error || "Unknown error"));
+        setIsDeleting(null);
+        return;
+      }
+
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
-      toast.success("User profile deleted");
-    } else {
-      toast.error("Failed to delete user profile: " + error.message);
+      toast.success("User completely deleted (profile + auth account)");
+    } catch (error) {
+      toast.error("Error deleting user: " + (error as Error).message);
     }
     setIsDeleting(null);
   };

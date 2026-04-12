@@ -314,7 +314,7 @@ export default function Settings() {
                 </section>
 
                 {/* Danger Zone */}
-                <section>
+                {/* <section>
                   <h3 className="text-sm font-semibold mb-4 text-destructive">Danger Zone</h3>
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between rounded-xl bg-background/50 border border-destructive/30 p-4">
@@ -327,7 +327,7 @@ export default function Settings() {
                       </button>
                     </div>
                   </div>
-                </section>
+                </section> */}
               </div>
             </>
           )}
@@ -414,14 +414,14 @@ export default function Settings() {
                 </section>
 
                 {/* Save Button */}
-                <div className="flex justify-end pt-2">
+                {/* <div className="flex justify-end pt-2">
                   <button
                     onClick={() => toast.success("Notification preferences saved")}
                     className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-2.5 text-sm font-medium transition-colors"
                   >
                     Save Preferences
                   </button>
-                </div>
+                </div> */}
               </div>
             </>
           )}

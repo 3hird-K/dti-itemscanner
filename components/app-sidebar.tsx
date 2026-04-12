@@ -22,7 +22,6 @@ import {
   SidebarFooter,
   SidebarHeader,
 } from "@/components/ui/sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image"
 import Logo from "@/assets/image-dark.png"
 
@@ -42,6 +41,7 @@ const staticData = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: profile } = useProfile();
 
+  if (!profile) return null;
   console.log("profilessss: ", profile)
 
   return (
@@ -75,11 +75,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavUser
           user={{
             id: profile?.id ?? "",
-            firstName: profile?.firstname || "User",
-            lastName: profile?.lastname || "",
             email: profile?.email || "",
             avatar: profile?.avatar_url || "",
             account_type: profile?.account_type || "User",
+            firstName: profile?.firstname,
+            lastName: profile?.lastname,
           }}
         />
       </SidebarFooter>

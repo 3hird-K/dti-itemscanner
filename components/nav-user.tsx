@@ -32,7 +32,6 @@ export function NavUser({
   const { isMobile } = useSidebar();
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  console.log("UserAvatar,", user.avatar)
 
   const logout = async () => {
     const supabase = createClient();
@@ -40,7 +39,6 @@ export function NavUser({
     router.push("/auth/login");
   };
 
-  // Logic to get initials safely
   const initials = `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "??";
   const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
 
@@ -55,14 +53,14 @@ export function NavUser({
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage 
-                    key={user.avatar} 
-                    src={user.avatar} 
-                    alt={fullName} 
+                  <AvatarImage
+                    key={user.avatar}
+                    src={user.avatar}
+                    alt={fullName}
                   />
                   <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                 </Avatar>
-                
+
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{fullName}</span>
                   <span className="text-muted-foreground truncate text-xs">
@@ -107,10 +105,10 @@ export function NavUser({
         </SidebarMenuItem>
       </SidebarMenu>
 
-      <EditAccountDialog 
-        user={user} 
-        open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen} 
+      <EditAccountDialog
+        user={user}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
       />
     </>
   );

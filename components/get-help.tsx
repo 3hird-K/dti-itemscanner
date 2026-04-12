@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   IconMail,
   IconPhone,
@@ -15,6 +15,7 @@ import {
   IconSearch,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { useProfile } from "@/hooks/use-profile";
 
 const faqItems = [
   {
@@ -30,45 +31,11 @@ const faqItems = [
       },
       {
         q: "What are the different account types?",
-        a: 'The portal supports three account types: Admin (full system access and user management), Staff (manage books, devices, and logs), and User (browse and manage personal content). Your account type is shown in Settings > Profile.',
+        a: 'The portal supports three account types: Admin (full system access and user management), and User (browse and manage personal content). Your account type is shown in Settings > Profile.',
       },
       {
         q: "I can't log in to my account. What should I do?",
         a: 'First, try resetting your password. If the issue persists, clear your browser cache and cookies. If you still cannot log in, contact support — your account may be locked or deactivated.',
-      },
-    ],
-  },
-  {
-    category: "Books & Shelf",
-    questions: [
-      {
-        q: "How do I add a book to my shelf?",
-        a: 'Navigate to the Shelf page and click "Add Book." Fill in the title, author, genre, and optionally upload a cover image. Click "Save" to add it.',
-      },
-      {
-        q: "How do I mark a book as a favorite?",
-        a: "Click the heart icon on any book card to add it to your favorites. You can view all your favorites from the Shelf page by filtering by favorites.",
-      },
-      {
-        q: "Can I edit or delete a book after adding it?",
-        a: 'Yes. Click on a book card to open its details, then use the "Edit" or "Delete" options. Note: only the book\'s owner or an Admin/Staff user can modify or remove a book.',
-      },
-    ],
-  },
-  {
-    category: "Devices & Logs",
-    questions: [
-      {
-        q: "How do I register a new device?",
-        a: 'Go to Manage Devices and click "Add Device." Enter the device information including name, type, and serial number. The device will appear in your device list after saving.',
-      },
-      {
-        q: "Where can I view time logs?",
-        a: "Time logs are available under the Time Logs section in the sidebar. You can filter logs by date range, user, and device. Admins and Staff can view all user logs.",
-      },
-      {
-        q: "How do I export my logs?",
-        a: 'On the Time Logs page, use the export button in the top toolbar to download your logs as a CSV file. You can filter the data before exporting to get only the records you need.',
       },
     ],
   },
@@ -167,22 +134,59 @@ export function GetHelp() {
   const [expandedGuide, setExpandedGuide] = useState<number | null>(null);
   const [faqSearch, setFaqSearch] = useState("");
 
+  // Get user profile
+  const { data: userProfile } = useProfile();
+
   // Ticket form state
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketMessage, setTicketMessage] = useState("");
   const [ticketCategory, setTicketCategory] = useState("general");
   const [showTicketForm, setShowTicketForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmitTicket = () => {
+  const handleSubmitTicket = async () => {
     if (!ticketSubject.trim() || !ticketMessage.trim()) {
       toast.error("Please fill in both subject and message");
       return;
     }
-    toast.success("Support ticket submitted successfully! We'll get back to you within 24 hours.");
-    setTicketSubject("");
-    setTicketMessage("");
-    setTicketCategory("general");
-    setShowTicketForm(false);
+
+    if (!userProfile?.email) {
+      toast.error("Unable to retrieve your email. Please try again.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/support/send-ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: ticketSubject,
+          message: ticketMessage,
+          category: ticketCategory,
+          userEmail: userProfile.email,
+          userName: `${userProfile.firstname || "User"} ${userProfile.lastname || ""}`.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error("Failed to send ticket: " + (error.error || "Unknown error"));
+        setIsSubmitting(false);
+        return;
+      }
+
+      toast.success("Support ticket sent successfully! We'll get back to you within 24 hours.");
+      setTicketSubject("");
+      setTicketMessage("");
+      setTicketCategory("general");
+      setShowTicketForm(false);
+    } catch (error) {
+      toast.error("Error sending ticket: " + (error as Error).message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const filteredFaq = faqItems
@@ -249,7 +253,7 @@ export function GetHelp() {
                           <span className="text-xs text-muted-foreground">Average response time: 24 hours</span>
                         </div>
                       </div>
-                      <div className="text-sm font-medium">izzysajol9@gmail.com</div>
+                      <div className="text-sm font-medium">itcgeek03@gmail.com</div>
                     </div>
 
                     <div className="flex items-center justify-between rounded-xl bg-background/50 border border-border p-4">
@@ -262,7 +266,7 @@ export function GetHelp() {
                           <span className="text-xs text-muted-foreground">Mon-Fri, 9am - 6pm PHT</span>
                         </div>
                       </div>
-                      <div className="text-sm font-medium">0906-674-6949</div>
+                      <div className="text-sm font-medium">0991-855-2251</div>
                     </div>
                   </div>
                 </section>
@@ -329,9 +333,10 @@ export function GetHelp() {
                         <div className="flex justify-end">
                           <button
                             onClick={handleSubmitTicket}
-                            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2 text-sm font-medium transition-colors"
+                            disabled={isSubmitting}
+                            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2 text-sm font-medium transition-colors"
                           >
-                            Submit Ticket
+                            {isSubmitting ? "Sending..." : "Submit Ticket"}
                           </button>
                         </div>
                       </div>
