@@ -91,7 +91,7 @@ const userGuides = [
   {
     icon: IconBook,
     title: "Getting Started",
-    description: "Learn the basics of navigating the OSA Service Portal.",
+    description: "Learn the basics of navigating the DTI.",
     steps: [
       "Log in with your credentials at the login page.",
       "You will be redirected to the Dashboard, which shows an overview of your activity.",
@@ -440,7 +440,7 @@ export function GetHelp() {
             {activeTab === "guides" && (
               <>
                 <p className="text-sm text-muted-foreground -mt-4 mb-6">
-                  Step-by-step guides to help you make the most of the OSA Service Portal.
+                  Step-by-step guides to help you make the most of the DTI.
                 </p>
 
                 <div className="flex flex-col gap-4">

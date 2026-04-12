@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      inventory_items: {
+        Row: {
+          acquisition_date: string | null
+          actual_user: string | null
+          article: string | null
+          condition: string | null
+          created_at: string | null
+          description: string | null
+          end_user: string | null
+          fund_cluster: string | null
+          id: string
+          location: string | null
+          ngas_number: string | null
+          office_center: string | null
+          par_ics_pos: string | null
+          par_ics_received_by: string | null
+          par_ics_ro: string | null
+          property_number: string | null
+          property_type: string | null
+          qty_physical_count: number | null
+          qty_property_card: number | null
+          qty_shortage_overage: number | null
+          remarks: string | null
+          serial_number: string | null
+          sub_location: string | null
+          tagging_number: string | null
+          total_cost: number | null
+          unit_of_measure: string | null
+          unit_value: number | null
+          updated_at: string | null
+          value_shortage_overage: number | null
+        }
+        Insert: {
+          acquisition_date?: string | null
+          actual_user?: string | null
+          article?: string | null
+          condition?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_user?: string | null
+          fund_cluster?: string | null
+          id?: string
+          location?: string | null
+          ngas_number?: string | null
+          office_center?: string | null
+          par_ics_pos?: string | null
+          par_ics_received_by?: string | null
+          par_ics_ro?: string | null
+          property_number?: string | null
+          property_type?: string | null
+          qty_physical_count?: number | null
+          qty_property_card?: number | null
+          qty_shortage_overage?: number | null
+          remarks?: string | null
+          serial_number?: string | null
+          sub_location?: string | null
+          tagging_number?: string | null
+          total_cost?: number | null
+          unit_of_measure?: string | null
+          unit_value?: number | null
+          updated_at?: string | null
+          value_shortage_overage?: number | null
+        }
+        Update: {
+          acquisition_date?: string | null
+          actual_user?: string | null
+          article?: string | null
+          condition?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_user?: string | null
+          fund_cluster?: string | null
+          id?: string
+          location?: string | null
+          ngas_number?: string | null
+          office_center?: string | null
+          par_ics_pos?: string | null
+          par_ics_received_by?: string | null
+          par_ics_ro?: string | null
+          property_number?: string | null
+          property_type?: string | null
+          qty_physical_count?: number | null
+          qty_property_card?: number | null
+          qty_shortage_overage?: number | null
+          remarks?: string | null
+          serial_number?: string | null
+          sub_location?: string | null
+          tagging_number?: string | null
+          total_cost?: number | null
+          unit_of_measure?: string | null
+          unit_value?: number | null
+          updated_at?: string | null
+          value_shortage_overage?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_type: string | null

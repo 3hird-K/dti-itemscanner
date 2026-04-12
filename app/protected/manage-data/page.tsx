@@ -3,24 +3,22 @@
 import * as React from "react"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { ManageUsersTable } from "@/components/manage-users-table"
+import { ManageDataTable } from "@/components/manage-data-table"
 import { createClient } from "@/lib/supabase/client"
 import { useQuery } from "@tanstack/react-query"
+import { Loader2 } from "lucide-react"
 import { useProfile } from "@/hooks/use-profile"
 
-export default function ManageUsersPage() {
+export default function ManageDataPage() {
   const supabase = createClient()
-  
-  // Obtain the current user's profile to understand if they have admin rights
   const { data: profile } = useProfile()
   const isAdmin = profile?.account_type === "admin"
 
-  // Fetch all registered profiles
-  const { data: users = [], isLoading } = useQuery({
-    queryKey: ["profiles"],
+  const { data: inventory = [], isLoading } = useQuery({
+    queryKey: ["inventory"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("inventory_items")
         .select("*")
         .order("created_at", { ascending: false })
       
@@ -29,29 +27,19 @@ export default function ManageUsersPage() {
     },
   })
 
-  // Calculate some basic KPIs for users
-  const adminCount = users.filter(u => u.account_type === "admin").length;
-
   return (
     <div className="flex-1 space-y-8 p-4 md:p-8 pt-6 min-h-screen bg-background text-foreground animate-in fade-in duration-500">
       {/* --- PAGE TITLE SECTION --- */}
       <div className="space-y-2 flex justify-between items-end">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-extrabold tracking-tight">Manage Users</h1>
+            <h1 className="text-4xl font-extrabold tracking-tight">Manage Data</h1>
             <Badge variant="secondary" className="h-6 rounded-full px-3 font-bold bg-primary/10 text-primary border-none">
-              {users.length} Total Profiles
+              Total Records: {inventory.length}
             </Badge>
-            {isAdmin && (
-              <Badge variant="default" className="h-6 rounded-full px-3 font-bold">
-                Admin Mode Active
-              </Badge>
-            )}
           </div>
           <p className="text-muted-foreground text-sm mt-1">
-            {isAdmin 
-              ? "You have administrative rights. You can upgrade roles, delete app data, and manage personnel."
-              : "View a directory of users who have registered through the portal. You do not have permissions to edit this data."}
+            View, edit, column-filter, and thoroughly manage all PPE inventory database records.
           </p>
         </div>
       </div>
@@ -59,7 +47,7 @@ export default function ManageUsersPage() {
       <Separator className="border-t border-border opacity-50 block h-[1px] w-full" />
 
       {/* --- TABLE CONTENT --- */}
-      <ManageUsersTable data={users} isLoading={isLoading} isAdmin={isAdmin} />
+      <ManageDataTable data={inventory} isLoading={isLoading} isAdmin={isAdmin} />
     </div>
   )
 }
