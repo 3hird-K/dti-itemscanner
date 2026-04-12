@@ -11,14 +11,16 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Department of Trade and Industry - Cagayan de Oro",
+  title: "Department of Trade and Industry - Misamis Oriental",
   description:
-    "The official Department of Trade and Industry - Cagayan de Oro Service Portal.",
+    "The official Department of Trade and Industry - Misamis Oriental Service Portal.",
   keywords: [
     "DTI",
-    "DTI CDO",
+    "DTI Misamis Oriental",
+    "Department of Trade and Industry",
+    "Department of Trade and Industry Misamis Oriental",
     "Service",
-    "Cagayan de Oro",
+    "Misamis Oriental",
   ],
 };
 

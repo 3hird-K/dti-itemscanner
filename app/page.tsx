@@ -188,7 +188,7 @@ export function Hero() {
       <div className="flex w-full max-w-4xl flex-col items-center space-y-6">
         {/* Title: Using a more aggressive scale for mobile impact */}
         <h1 className="text-4xl font-extrabold tracking-tighter text-foreground sm:text-6xl md:text-7xl lg:text-8xl">
-          Department of Trade and Industry – Cagayan de Oro City
+          Department of Trade and Industry – Misamis Oriental
         </h1>
 
         <p className="max-w-md text-base leading-relaxed text-muted-foreground sm:max-w-xl sm:text-lg md:text-xl">
