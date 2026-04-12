@@ -10,91 +10,16 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
-      books: {
-        Row: {
-          author: string | null
-          created_at: string
-          genre: string | null
-          id: string
-          image: string | null
-          title: string | null
-          user_id: string | null
-        }
-        Insert: {
-          author?: string | null
-          created_at?: string
-          genre?: string | null
-          id?: string
-          image?: string | null
-          title?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          author?: string | null
-          created_at?: string
-          genre?: string | null
-          id?: string
-          image?: string | null
-          title?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "books_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      favorites: {
-        Row: {
-          book_id: string | null
-          created_at: string
-          favorited: boolean | null
-          id: number
-          user_id: string | null
-        }
-        Insert: {
-          book_id?: string | null
-          created_at?: string
-          favorited?: boolean | null
-          id?: number
-          user_id?: string | null
-        }
-        Update: {
-          book_id?: string | null
-          created_at?: string
-          favorited?: boolean | null
-          id?: number
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "favorites_book_id_fkey"
-            columns: ["book_id"]
-            isOneToOne: false
-            referencedRelation: "books"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "favorites_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           account_type: string | null
           avatar_url: string | null
+          created_at: string | null
+          email: string | null
           firstname: string | null
           id: string
           lastname: string | null
@@ -103,6 +28,8 @@ export type Database = {
         Insert: {
           account_type?: string | null
           avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
           firstname?: string | null
           id: string
           lastname?: string | null
@@ -111,6 +38,8 @@ export type Database = {
         Update: {
           account_type?: string | null
           avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
           firstname?: string | null
           id?: string
           lastname?: string | null

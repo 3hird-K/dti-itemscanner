@@ -5,7 +5,7 @@ import { Database } from "@/database.types";
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 export interface ProfileWithEmail extends Profile {
-  email: string | undefined;
+  email: string
 }
 
 export async function getProfile(): Promise<ProfileWithEmail> {

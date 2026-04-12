@@ -20,15 +20,10 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarTrigger,
-  SidebarInput,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image"
-import Logo from "@/assets/imagess.png"
+import Logo from "@/assets/image-dark.png"
 
 const staticData = {
   navMain: [],
@@ -45,15 +40,9 @@ const staticData = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { data: profile, isLoading } = useProfile();
+  const { data: profile } = useProfile();
 
-  const filteredDocuments = React.useMemo(() => {
-    if (!profile) return staticData.documents;
-    if (profile.account_type === "User") {
-      return staticData.documents.filter((doc) => doc.name !== "Dashboard");
-    }
-    return staticData.documents;
-  }, [profile]);
+  console.log("profilessss: ", profile)
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -63,14 +52,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <div className="flex bg-[#1c1d22] p-1.5 rounded-lg border border-white/5 shadow-sm justify-center items-center shrink-0">
               <Image
                 src={Logo}
-                alt="Osa Logo"
+                alt="DTI Logo"
                 width={20}
                 height={20}
                 className="block object-contain"
               />
             </div>
             <span className="font-semibold text-sm truncate group-data-[collapsible=icon]:hidden">
-              Osa Service Portal
+              DTI QR Scanner
             </span>
           </a>
         </div>
@@ -78,37 +67,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         <NavMain items={staticData.navMain} />
-
-        {/* Pass the FILTERED items here instead of staticData.documents */}
-        {isLoading ? (
-          <div className="px-4 space-y-2 mt-4">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-          </div>
-        ) : (
-          <NavDocuments items={filteredDocuments} />
-        )}
-
+        <NavDocuments items={staticData.documents} />
         <NavSecondary items={staticData.navSecondary} className="mt-auto" />
       </SidebarContent>
 
       <SidebarFooter>
-        {isLoading ? (
-          <div className="p-4">
-            <Skeleton className="h-12 w-full rounded-lg" />
-          </div>
-        ) : (
-          <NavUser
-            user={{
-              id: profile?.id ?? "",
-              firstName: profile?.firstname || "User",
-              lastName: profile?.lastname || "",
-              email: profile?.email || "",
-              avatar: profile?.avatar_url || "",
-              account_type: profile?.account_type || "User",
-            }}
-          />
-        )}
+        <NavUser
+          user={{
+            id: profile?.id ?? "",
+            firstName: profile?.firstname || "User",
+            lastName: profile?.lastname || "",
+            email: profile?.email || "",
+            avatar: profile?.avatar_url || "",
+            account_type: profile?.account_type || "User",
+          }}
+        />
       </SidebarFooter>
     </Sidebar>
   );

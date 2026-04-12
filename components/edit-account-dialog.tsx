@@ -35,9 +35,9 @@ export function EditAccountDialog({ user, open, onOpenChange }: EditAccountDialo
   const [lastName, setLastName] = useState(user.lastName);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const supabase = createClient();
@@ -63,13 +63,13 @@ export function EditAccountDialog({ user, open, onOpenChange }: EditAccountDialo
       const filePath = `${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from('user-profiles')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
+        .from('user-profiles')
         .getPublicUrl(filePath);
 
       const { error: updateError } = await supabase
@@ -80,7 +80,7 @@ export function EditAccountDialog({ user, open, onOpenChange }: EditAccountDialo
       if (updateError) throw updateError;
 
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      
+
     } catch (error) {
       console.error("Error uploading avatar:", error);
       alert("Error uploading avatar!");
@@ -105,7 +105,7 @@ export function EditAccountDialog({ user, open, onOpenChange }: EditAccountDialo
         .eq("id", user.id);
 
       if (error) throw error;
-      
+
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       router.refresh();
@@ -126,11 +126,11 @@ export function EditAccountDialog({ user, open, onOpenChange }: EditAccountDialo
             Update your personal information and profile picture.
           </DialogDescription>
         </DialogHeader>
-        
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          className="hidden" 
+
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
           accept="image/*"
           onChange={handleAvatarUpload}
           disabled={isUploading}
@@ -173,7 +173,7 @@ export function EditAccountDialog({ user, open, onOpenChange }: EditAccountDialo
             </div>
             <p className="mt-2 text-xs text-muted-foreground">Click photo to change</p>
           </div>
-          
+
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="firstName">First Name</Label>

@@ -5,7 +5,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "gen:types": "supabase gen types typescript --project-id hgsmamluwdfiluoqpvsy --schema public > database.types.ts"
+    "gen:types": "supabase gen types typescript --project-id zijqnhwuxmrcdoncafwh --schema public > database.types.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
