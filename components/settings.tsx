@@ -371,13 +371,13 @@ export default function Settings() {
                 <section>
                   <h3 className="text-sm font-semibold mb-4 text-foreground">Activity Alerts</h3>
                   <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between rounded-xl bg-background/50 border border-border p-4">
+                    {/* <div className="flex items-center justify-between rounded-xl bg-background/50 border border-border p-4">
                       <div className="flex flex-col gap-1">
                         <span className="text-sm font-medium">Book Shelf Alerts</span>
                         <span className="text-xs text-muted-foreground">Get notified when books are added, updated, or removed from your shelf</span>
                       </div>
                       <CustomSwitch enabled={bookAlerts} onChange={() => setBookAlerts(!bookAlerts)} />
-                    </div>
+                    </div> */}
 
                     <div className="flex items-center justify-between rounded-xl bg-background/50 border border-border p-4">
                       <div className="flex flex-col gap-1">
