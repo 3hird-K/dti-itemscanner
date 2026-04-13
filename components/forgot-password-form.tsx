@@ -36,8 +36,12 @@ export function ForgotPasswordForm({
     setError(null);
 
     try {
+      // Use NEXT_PUBLIC_SITE_URL if available (for production), otherwise use window.location.origin
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const redirectUrl = `${siteUrl}/auth/update-password`;
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/update-password`,
+        redirectTo: redirectUrl,
       });
       if (error) throw error;
       setSuccess(true);
