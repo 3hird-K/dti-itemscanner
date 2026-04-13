@@ -41,7 +41,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -143,6 +142,8 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<any | null>(null);
 
   // Table states
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
@@ -199,7 +200,7 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
-                    onClick={() => handleDelete(item.id)}
+                    onClick={() => setDeleteConfirmItem(item)}
                     disabled={isDeleting === item.id}
                   >
                     <Trash2 className="w-4 h-4 mr-2" /> Delete
@@ -277,52 +278,70 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
 
     // 16 Categorized editable fields
     const payload = {
-      property_type: formData.get("property_type"),
-      article: formData.get("article"),
-      acquisition_date: formData.get("acquisition_date"),
-      description: formData.get("description"),
-      end_user: formData.get("end_user"),
-      serial_number: formData.get("serial_number"),
-      ngas_number: formData.get("ngas_number"),
-      property_number: formData.get("property_number"),
-      unit_of_measure: formData.get("unit_of_measure"),
-      unit_value: parseFloat(formData.get("unit_value") as string) || 0,
-      remarks: formData.get("remarks"),
-      par_ics_ro: formData.get("par_ics_ro"),
-      actual_user: formData.get("actual_user"),
-      sub_location: formData.get("sub_location"),
-      condition: formData.get("condition"),
-      tagging_number: formData.get("tagging_number"),
+      property_type: formData.get("property_type") || null,
+      article: formData.get("article") || null,
+      acquisition_date: formData.get("acquisition_date") || null,
+      description: formData.get("description") || null,
+      end_user: formData.get("end_user") || null,
+      serial_number: formData.get("serial_number") || null,
+      ngas_number: formData.get("ngas_number") || null,
+      property_number: formData.get("property_number") || null,
+      unit_of_measure: formData.get("unit_of_measure") || null,
+      unit_value: formData.get("unit_value") ? parseFloat(formData.get("unit_value") as string) : null,
+      remarks: formData.get("remarks") || null,
+      par_ics_ro: formData.get("par_ics_ro") || null,
+      actual_user: formData.get("actual_user") || null,
+      sub_location: formData.get("sub_location") || null,
+      condition: formData.get("condition") || null,
+      tagging_number: formData.get("tagging_number") || null,
     };
 
+    console.log("Payload being sent:", payload);
+
     if (isAdding) {
-      const { error } = await supabase.from("inventory_items").insert([payload]);
+      const { data, error } = await supabase.from("inventory_items").insert([payload]);
+      console.log("Insert response:", { data, error });
       if (!error) {
         setIsAdding(false);
+        setCurrentStep(1);
         queryClient.invalidateQueries({ queryKey: ["inventory"] });
         toast.success("Record added successfully");
       } else {
+        console.error("Insert error details:", error);
         toast.error("Error adding item: " + error.message);
       }
     } else if (editingItem) {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("inventory_items")
         .update(payload)
         .eq("id", editingItem.id);
 
+      console.log("Update response:", { data, error });
       if (!error) {
         setEditingItem(null);
+        setCurrentStep(1);
         queryClient.invalidateQueries({ queryKey: ["inventory"] });
         toast.success("Record updated successfully");
       } else {
+        console.error("Update error details:", error);
         toast.error("Error updating item: " + error.message);
       }
     }
   };
 
+  const handleNext = () => {
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to completely delete this record?")) return;
-    setIsDeleting(id);
     const { error } = await supabase.from("inventory_items").delete().eq("id", id);
     if (!error) {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
@@ -330,6 +349,7 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
     } else {
       toast.error("Failed to delete item: " + error.message);
     }
+    setDeleteConfirmItem(null);
     setIsDeleting(null);
   };
 
@@ -517,107 +537,229 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
         if (!open) {
           setIsAdding(false);
           setEditingItem(null);
+          setCurrentStep(1);
         }
       }}>
         <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
           <div className="px-6 py-4 border-b border-border">
-            <DialogTitle>{isAdding ? "Add New Record" : "Edit Record Data"}</DialogTitle>
+            <DialogTitle>{isAdding ? "Add New Record" : "Edit Record Data"} - Step {currentStep} of 3</DialogTitle>
+          </div>
+
+          {/* Step Indicator */}
+          <div className="flex justify-between px-6 py-3 bg-muted/20 border-b border-border">
+            {[1, 2, 3].map((step) => (
+              <div key={step} className="flex flex-col items-center flex-1">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold mb-1 transition-colors text-sm ${
+                    step === currentStep
+                      ? "bg-blue-500 text-white"
+                      : step < currentStep
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-300 text-gray-600"
+                  }`}
+                >
+                  {step < currentStep ? "✓" : step}
+                </div>
+                <span className="text-xs text-center font-medium text-muted-foreground">
+                  {step === 1 && "Identifiers"}
+                  {step === 2 && "Specifications"}
+                  {step === 3 && "Tracking"}
+                </span>
+              </div>
+            ))}
           </div>
 
           <div className="px-6 py-4 overflow-y-auto flex-1">
-            <form id="record-form" onSubmit={handleSave} className="grid grid-cols-2 gap-4">
+            <form id="record-form" onSubmit={handleSave} className="space-y-4" onKeyPress={(e) => {
+              if (e.key === 'Enter' && currentStep < 3) {
+                e.preventDefault();
+              }
+            }}>
 
-              {/* Category: Identifiers */}
-              <div className="col-span-2 mt-2 mb-1 border-b border-border/50 pb-1">
-                <h4 className="text-sm font-bold text-primary">Identifiers & Categorization</h4>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="property_number">Property Number</Label>
-                <Input id="property_number" name="property_number" defaultValue={currentItem.property_number} required />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="property_type">Property Type (PPE)</Label>
-                <Input id="property_type" name="property_type" defaultValue={currentItem.property_type} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="ngas_number">NGAS No.</Label>
-                <Input id="ngas_number" name="ngas_number" defaultValue={currentItem.ngas_number} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="article">Article</Label>
-                <Input id="article" name="article" defaultValue={currentItem.article} required />
-              </div>
-
-              {/* Category: Specifics */}
-              <div className="col-span-2 mt-4 mb-1 border-b border-border/50 pb-1">
-                <h4 className="text-sm font-bold text-primary">Specifications & Value</h4>
-              </div>
-              <div className="grid gap-2 col-span-2">
-                <Label htmlFor="description">Description (Brand, Model, Size, Color, etc.)</Label>
-                <Input id="description" name="description" defaultValue={currentItem.description} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="serial_number">Serial No.</Label>
-                <Input id="serial_number" name="serial_number" defaultValue={currentItem.serial_number} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="tagging_number">Tagging No.</Label>
-                <Input id="tagging_number" name="tagging_number" defaultValue={currentItem.tagging_number} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="unit_of_measure">Unit of Measure</Label>
-                <Input id="unit_of_measure" name="unit_of_measure" defaultValue={currentItem.unit_of_measure} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="unit_value">Unit Value (₱)</Label>
-                <Input id="unit_value" name="unit_value" type="number" step="0.01" defaultValue={currentItem.unit_value} required />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="acquisition_date">Acquisition Date</Label>
-                <Input id="acquisition_date" name="acquisition_date" type="date" defaultValue={currentItem.acquisition_date} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="condition">Condition</Label>
-                <Input id="condition" name="condition" defaultValue={currentItem.condition} />
+              {/* Step 1: Identifiers & Categorization */}
+              <div style={{ display: currentStep === 1 ? 'block' : 'none' }} className="space-y-4">
+                <h4 className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">Identifiers & Categorization</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="property_number">Property Number</Label>
+                    <Input id="property_number" name="property_number" defaultValue={currentItem.property_number} required />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="property_type">Property Type (PPE)</Label>
+                    <Input id="property_type" name="property_type" defaultValue={currentItem.property_type} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="ngas_number">NGAS No.</Label>
+                    <Input id="ngas_number" name="ngas_number" defaultValue={currentItem.ngas_number} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="article">Article</Label>
+                    <Input id="article" name="article" defaultValue={currentItem.article} required />
+                  </div>
+                </div>
               </div>
 
-              {/* Category: Ownership & Location */}
-              <div className="col-span-2 mt-4 mb-1 border-b border-border/50 pb-1">
-                <h4 className="text-sm font-bold text-primary">User & Location Tracking</h4>
+              {/* Step 2: Specifications & Value */}
+              <div style={{ display: currentStep === 2 ? 'block' : 'none' }} className="space-y-4">
+                <h4 className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">Specifications & Value</h4>
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="description">Description (Brand, Model, Size, Color, etc.)</Label>
+                    <Input id="description" name="description" defaultValue={currentItem.description} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="serial_number">Serial No.</Label>
+                      <Input id="serial_number" name="serial_number" defaultValue={currentItem.serial_number} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="tagging_number">Tagging No.</Label>
+                      <Input id="tagging_number" name="tagging_number" defaultValue={currentItem.tagging_number} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="unit_of_measure">Unit of Measure</Label>
+                      <Input id="unit_of_measure" name="unit_of_measure" defaultValue={currentItem.unit_of_measure} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="unit_value">Unit Value (₱)</Label>
+                      <Input id="unit_value" name="unit_value" type="number" step="0.01" defaultValue={currentItem.unit_value} required />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="acquisition_date">Acquisition Date</Label>
+                      <Input id="acquisition_date" name="acquisition_date" type="date" defaultValue={currentItem.acquisition_date} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="condition">Condition</Label>
+                      <Input id="condition" name="condition" defaultValue={currentItem.condition} />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="end_user">End-User</Label>
-                <Input id="end_user" name="end_user" defaultValue={currentItem.end_user} />
+
+              {/* Step 3: User & Location Tracking */}
+              <div style={{ display: currentStep === 3 ? 'block' : 'none' }} className="space-y-4">
+                <h4 className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">User & Location Tracking</h4>
+                <div className="grid gap-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="end_user">End-User</Label>
+                      <Input id="end_user" name="end_user" defaultValue={currentItem.end_user} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="actual_user">Actual User</Label>
+                      <Input id="actual_user" name="actual_user" defaultValue={currentItem.actual_user} />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="sub_location">Sub-Location / Whereabouts</Label>
+                    <Input id="sub_location" name="sub_location" defaultValue={currentItem.sub_location} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="par_ics_ro">PAR/ICS NO. (RO)</Label>
+                    <Input id="par_ics_ro" name="par_ics_ro" defaultValue={currentItem.par_ics_ro} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="remarks">Remarks</Label>
+                    <Input id="remarks" name="remarks" defaultValue={currentItem.remarks} />
+                  </div>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="actual_user">Actual User</Label>
-                <Input id="actual_user" name="actual_user" defaultValue={currentItem.actual_user} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="sub_location">Sub-Location / Whereabouts</Label>
-                <Input id="sub_location" name="sub_location" defaultValue={currentItem.sub_location} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="par_ics_ro">PAR/ICS NO. (RO)</Label>
-                <Input id="par_ics_ro" name="par_ics_ro" defaultValue={currentItem.par_ics_ro} />
-              </div>
-              <div className="grid gap-2 col-span-2">
-                <Label htmlFor="remarks">Remarks</Label>
-                <Input id="remarks" name="remarks" defaultValue={currentItem.remarks} />
-              </div>
+
             </form>
           </div>
 
-          <div className="px-6 py-4 border-t border-border flex justify-end gap-2 bg-muted/20">
-            <Button type="button" variant="outline" onClick={() => { setIsAdding(false); setEditingItem(null); }}>
+          <div className="px-6 py-4 border-t border-border flex gap-2 bg-muted/20">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={(e) => {
+                e.preventDefault();
+                setIsAdding(false); 
+                setEditingItem(null); 
+                setCurrentStep(1);
+              }}
+              className="flex-1"
+            >
               Cancel
             </Button>
-            <Button type="submit" form="record-form">
-              {isAdding ? "Save New Record" : "Update Record"}
+            <Button 
+              type="button" 
+              onClick={(e) => {
+                e.preventDefault();
+                handlePrevious();
+              }}
+              disabled={currentStep === 1}
+              variant="outline"
+            >
+              Previous
+            </Button>
+            {currentStep < 3 ? (
+              <Button 
+                type="button" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNext();
+                }}
+                className="flex-1"
+              >
+                Next
+              </Button>
+            ) : (
+              <Button 
+                type="submit" 
+                form="record-form"
+                className="flex-1"
+              >
+                {isAdding ? "Save New Record" : "Update Record"}
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmItem} onOpenChange={(open) => !open && setDeleteConfirmItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete Record</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Are you sure you want to permanently delete this record?
+            </p>
+            <div className="bg-muted/50 p-3 rounded-lg border border-border">
+              <p className="text-sm font-semibold">{deleteConfirmItem?.article || deleteConfirmItem?.property_number || "Unknown"}</p>
+              <p className="text-xs text-muted-foreground mt-1">{deleteConfirmItem?.description || "No description"}</p>
+            </div>
+            <p className="text-xs text-destructive mt-4">This action cannot be undone.</p>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setDeleteConfirmItem(null)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive"
+              disabled={isDeleting === deleteConfirmItem?.id}
+              onClick={() => {
+                setIsDeleting(deleteConfirmItem?.id);
+                handleDelete(deleteConfirmItem?.id);
+              }}
+            >
+              {isDeleting === deleteConfirmItem?.id ? "Deleting..." : "Delete"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
       {/* QR Code Single View Modal */}
       <Dialog open={!!viewingQr} onOpenChange={(open) => !open && setViewingQr(null)}>
         <DialogContent className="sm:max-w-md">

@@ -22,11 +22,13 @@ interface ExportPdfDialogProps {
 
 export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
 
   // Header state
   const [asOfDate, setAsOfDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [fundCluster, setFundCluster] = useState("101");
-  const [accountableOfficer, setAccountableOfficer] = useState("JESUSA M. ABEAR, OIC - Provincial Director, DTI Misamis Oriental is accountable.");
+  const [accountabilityDate, setAccountabilityDate] = useState("2024-02-01");
+  const [accountableOfficer, setAccountableOfficer] = useState(`JESUSA M. ABEAR, OIC - Provincial Director, DTI Misamis Oriental is accountable, having assumed accountability on ${format(new Date("2024-02-01"), "MMM d, yyyy")}`);
 
   // Footer state
   const [certName, setCertName] = useState("KRYZZA MAE C. TALON");
@@ -39,13 +41,11 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
   const [verifDesig, setVerifDesig] = useState("COA Representative");
 
   const handleExport = () => {
-    // Filter inventory based on created_at or just use all if not strictly filtering
-    // Since user specified filtering by "created_at", we filter items that were created on or before the selected date
     const targetDate = new Date(asOfDate);
-    targetDate.setHours(23, 59, 59, 999); // End of the selected day
+    targetDate.setHours(23, 59, 59, 999);
 
     const filteredInventory = inventory.filter((item) => {
-      if (!item.created_at) return true; // Include if no date
+      if (!item.created_at) return true;
       const itemDate = new Date(item.created_at);
       return itemDate.getTime() <= targetDate.getTime();
     });
@@ -61,6 +61,15 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
     });
 
     setIsOpen(false);
+    setCurrentStep(1);
+  };
+
+  const handleNext = () => {
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
   return (
@@ -70,15 +79,40 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
           <FileText className="w-4 h-4 text-rose-500" /> Export PDF
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Generate RPCPPE PDF Report</DialogTitle>
           <DialogDescription>
-            Configure the header, date, and signatories for your PDF report. The report will include items existing as of the selected date.
+            Step {currentStep} of 3 - Complete each section to generate your report
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
+        {/* Step Indicator */}
+        <div className="flex justify-between mb-6">
+          {[1, 2, 3].map((step) => (
+            <div key={step} className="flex flex-col items-center flex-1">
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold mb-2 transition-colors ${
+                  step === currentStep
+                    ? "bg-blue-500 text-white"
+                    : step < currentStep
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
+                {step < currentStep ? "✓" : step}
+              </div>
+              <span className="text-xs text-center font-medium">
+                {step === 1 && "Report Header"}
+                {step === 2 && "Officer Info"}
+                {step === 3 && "Signatories"}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Step 1: Report Header */}
+        {currentStep === 1 && (
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-primary uppercase tracking-wider">Report Header</h4>
 
@@ -102,6 +136,26 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
             </div>
 
             <div className="grid gap-2">
+              <Label htmlFor="accountabilityDate">Accountability Date</Label>
+              <Input
+                id="accountabilityDate"
+                type="date"
+                value={accountabilityDate}
+                onChange={(e) => {
+                  setAccountabilityDate(e.target.value);
+                  setAccountableOfficer(`JESUSA M. ABEAR, OIC - Provincial Director, DTI Misamis Oriental is accountable, having assumed accountability on ${format(new Date(e.target.value), "MMM d, yyyy")}`);
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Officer Information */}
+        {currentStep === 2 && (
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-primary uppercase tracking-wider">Accountable Officer</h4>
+
+            <div className="grid gap-2">
               <Label htmlFor="accountableOfficer">Accountable Officer Header</Label>
               <Input
                 id="accountableOfficer"
@@ -109,8 +163,12 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
                 onChange={(e) => setAccountableOfficer(e.target.value)}
               />
             </div>
+            <p className="text-xs text-muted-foreground italic">This field auto-populates based on the accountability date you selected.</p>
           </div>
+        )}
 
+        {/* Step 3: Signatories */}
+        {currentStep === 3 && (
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-primary uppercase tracking-wider">Signatories (Footer)</h4>
 
@@ -149,12 +207,28 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
                 <Input value={verifDesig} onChange={(e) => setVerifDesig(e.target.value)} placeholder="Designation" className="h-8 text-sm" />
               </div>
             </div>
-
           </div>
+        )}
 
-          <Button onClick={handleExport} className="w-full mt-2">
-            <Download className="w-4 h-4 mr-2" /> Generate & Download PDF
+        {/* Navigation Buttons */}
+        <div className="flex gap-3 mt-6 pt-4 border-t">
+          <Button
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
+            variant="outline"
+            className="flex-1"
+          >
+            Previous
           </Button>
+          {currentStep < 3 ? (
+            <Button onClick={handleNext} className="flex-1">
+              Next
+            </Button>
+          ) : (
+            <Button onClick={handleExport} className="flex-1">
+              <Download className="w-4 h-4 mr-2" /> Generate & Download PDF
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
