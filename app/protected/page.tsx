@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ImportDialog } from "@/components/import-dialog";
+import { ExportPdfDialog } from "@/components/export-pdf-dialog";
 import { InventoryTable } from "@/components/inventory-table";
 import { createClient } from "@/lib/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -88,7 +89,12 @@ export default function DashboardPage() {
             Inventory Database <span className="text-muted-foreground font-normal ml-1">— RPCPPE Records</span>
           </h2>
         </div>
-        {isAdmin && <ImportDialog />}
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <ExportPdfDialog inventory={inventory} />
+            <ImportDialog />
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}
