@@ -49,7 +49,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <a href="/" className="flex items-center gap-3 w-full overflow-hidden group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:justify-center">
             <div className="flex bg-white p-1.5 rounded-lg border border-white/5 shadow-sm justify-center items-center shrink-0">
               <Image
-                src={Logo}
+                src={LogoDark}
                 alt="DTI Office Operations"
                 width={20}
                 height={20}
