@@ -4,10 +4,8 @@ import * as React from "react";
 import {
   IconLayoutDashboard,
   IconUsersGroup,
-  IconClock,
   IconSettings,
   IconHelpCircle,
-  IconDeviceLaptop,
   IconDatabase
 } from "@tabler/icons-react";
 
@@ -23,7 +21,8 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import Image from "next/image"
-import Logo from "@/assets/image-dark.png"
+import Logo from "@/assets/image.jpg"
+import LogoDark from "@/assets/image-dark.png"
 
 const staticData = {
   navMain: [],
@@ -42,20 +41,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: profile } = useProfile();
 
   if (!profile) return null;
-  console.log("profilessss: ", profile)
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="space-y-4 pt-6 pb-2">
         <div className="flex items-center gap-3 px-3 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
           <a href="/" className="flex items-center gap-3 w-full overflow-hidden group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:justify-center">
-            <div className="flex bg-[#1c1d22] p-1.5 rounded-lg border border-white/5 shadow-sm justify-center items-center shrink-0">
+            <div className="flex bg-white p-1.5 rounded-lg border border-white/5 shadow-sm justify-center items-center shrink-0">
               <Image
                 src={Logo}
-                alt="DTI Logo"
+                alt="DTI Office Operations"
                 width={20}
                 height={20}
-                className="block object-contain"
+                className="block dark:hidden"
+              />
+
+              {/* Dark mode logo */}
+              <Image
+                src={LogoDark}
+                alt="DTI Office Operations"
+                width={20}
+                height={20}
+                className="hidden dark:block"
               />
             </div>
             <span className="font-semibold text-sm truncate group-data-[collapsible=icon]:hidden">
