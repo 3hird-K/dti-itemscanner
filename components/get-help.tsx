@@ -416,7 +416,7 @@ export function GetHelp() {
                           <span className="text-xs text-muted-foreground">Average response time: 24 hours</span>
                         </div>
                       </div>
-                      <div className="text-sm font-medium">itcgeek03@gmail.com</div>
+                      <div className="text-sm font-medium">dime.neil03@gmail.com</div>
                     </div>
 
                     <div className="flex items-center justify-between rounded-xl bg-background/50 border border-border p-4">
