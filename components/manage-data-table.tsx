@@ -169,6 +169,19 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [rowSelection, setRowSelection] = useState({});
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
+  const filteredData = React.useMemo(() => {
+    if (categoryFilter === "ppe") {
+      return data.filter(item => Number(item.unit_value || 0) >= 50000);
+    } else if (categoryFilter === "semi") {
+      return data.filter(item => {
+        const val = Number(item.unit_value || 0);
+        return val >= 5000 && val < 50000;
+      });
+    }
+    return data;
+  }, [data, categoryFilter]);
 
   // QR Modal States
   const [viewingQr, setViewingQr] = useState<any | null>(null);
@@ -215,7 +228,7 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
   });
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -359,14 +372,27 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
     <div className="w-full space-y-4">
       {/* Controls & Search */}
       <div className="flex items-center justify-between">
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search all columns..."
-            value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className="pl-9 bg-card border-border rounded-full"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search all columns..."
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+              className="pl-9 bg-card border-border rounded-full"
+            />
+          </div>
+          
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[330px] bg-card border-border rounded-full">
+              <SelectValue placeholder="Categorize item..." />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              <SelectItem value="all">All Items</SelectItem>
+              <SelectItem value="ppe">PPE - 50k and above</SelectItem>
+              <SelectItem value="semi">Semi-expendable properties - 5,000 to 49,999.00</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-center gap-3">

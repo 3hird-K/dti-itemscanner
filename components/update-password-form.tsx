@@ -90,8 +90,16 @@ export function UpdatePasswordForm({
           }
         }
       } else {
-        // No valid auth tokens found
-        setError("No valid password reset link found. Please request a new one.");
+        // Fallback: Check if a session already exists (e.g. established by server-side /auth/confirm route)
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          setError(`Session check error: ${sessionError.message}`);
+        } else if (sessionData.session) {
+          setIsSessionValid(true);
+        } else {
+          // No valid auth tokens found and no session exists
+          setError("No valid password reset link found. Please request a new one.");
+        }
       }
 
       window.history.replaceState(null, "", window.location.pathname);
