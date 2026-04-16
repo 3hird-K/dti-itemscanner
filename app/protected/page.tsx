@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ImportDialog } from "@/components/import-dialog";
 import { ExportPdfDialog } from "@/components/export-pdf-dialog";
 import { InventoryTable } from "@/components/inventory-table";
 import { createClient } from "@/lib/supabase/client";
@@ -92,7 +91,6 @@ export default function DashboardPage() {
         {isAdmin && (
           <div className="flex items-center gap-2">
             <ExportPdfDialog inventory={inventory} />
-            <ImportDialog />
           </div>
         )}
       </div>

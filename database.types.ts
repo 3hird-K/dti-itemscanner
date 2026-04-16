@@ -38,6 +38,7 @@ export type Database = {
           qty_shortage_overage: number | null
           remarks: string | null
           serial_number: string | null
+          status: string
           sub_location: string | null
           tagging_number: string | null
           total_cost: number | null
@@ -69,6 +70,7 @@ export type Database = {
           qty_shortage_overage?: number | null
           remarks?: string | null
           serial_number?: string | null
+          status?: string
           sub_location?: string | null
           tagging_number?: string | null
           total_cost?: number | null
@@ -100,6 +102,7 @@ export type Database = {
           qty_shortage_overage?: number | null
           remarks?: string | null
           serial_number?: string | null
+          status?: string
           sub_location?: string | null
           tagging_number?: string | null
           total_cost?: number | null

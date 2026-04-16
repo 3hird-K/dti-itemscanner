@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/provider/providers";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +34,7 @@ export default function RootLayout({
       <body className={`${geistSans.className} antialiased overflow-x-hidden`}>
         <Providers>
           {children}
-          <Toaster position="top-center" />
+          <Toaster position="top-center" richColors />
         </Providers>
       </body>
     </html>

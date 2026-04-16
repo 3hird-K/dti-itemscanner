@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Download, FileText } from "lucide-react";
 import { generateRpcppePdf } from "@/lib/generate-rpcppe-pdf";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface ExportPdfDialogProps {
   inventory: any[];
@@ -45,10 +46,18 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
     targetDate.setHours(23, 59, 59, 999);
 
     const filteredInventory = inventory.filter((item) => {
+      // Exclude items that are currently pending.
+      if (item.status && item.status.toLowerCase() !== "approved") return false;
+
       if (!item.created_at) return true;
       const itemDate = new Date(item.created_at);
       return itemDate.getTime() <= targetDate.getTime();
     });
+
+    if (filteredInventory.length === 0) {
+      toast.error("No approved records found for the selected date.");
+      return;
+    }
 
     generateRpcppePdf({
       asOfDate,
@@ -76,7 +85,7 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-rose-500" /> Export PDF
+          <FileText className="w-4 h-4 text-rose-500" /> Generate Report
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -92,13 +101,12 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
           {[1, 2, 3].map((step) => (
             <div key={step} className="flex flex-col items-center flex-1">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold mb-2 transition-colors ${
-                  step === currentStep
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold mb-2 transition-colors ${step === currentStep
                     ? "bg-blue-500 text-white"
                     : step < currentStep
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-300 text-gray-600"
-                }`}
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-300 text-gray-600"
+                  }`}
               >
                 {step < currentStep ? "✓" : step}
               </div>

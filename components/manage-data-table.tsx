@@ -59,7 +59,13 @@ import {
   Printer,
   Download,
   Plus,
+  CheckCircle,
+  Calendar as CalendarIcon,
 } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QRCodeSVG } from "qrcode.react";
@@ -69,6 +75,7 @@ interface ManageDataTableProps {
   data: any[];
   isLoading?: boolean;
   isAdmin?: boolean;
+  isStaff?: boolean;
 }
 
 // 26 columns based exactly on the Supabase schema
@@ -93,6 +100,21 @@ const columnsDef: ColumnDef<any>[] = [
     ),
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string;
+      const displayStatus = status || "pending";
+      return (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+          displayStatus.toLowerCase() === "approved" ? "bg-green-500/20 text-green-500 border border-green-500/30" : "bg-amber-500/20 text-amber-500 border border-amber-500/30"
+        }`}>
+          {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
+        </span>
+      );
+    }
   },
   { accessorKey: "property_type", header: "Property Type" },
   { accessorKey: "fund_cluster", header: "Fund Cluster" },
@@ -134,7 +156,7 @@ const columnsDef: ColumnDef<any>[] = [
   { accessorKey: "tagging_number", header: "Tagging No." },
 ];
 
-export function ManageDataTable({ data, isLoading = false, isAdmin = false }: ManageDataTableProps) {
+export function ManageDataTable({ data, isLoading = false, isAdmin = false, isStaff = false }: ManageDataTableProps) {
   const supabase = createClient();
   const queryClient = useQueryClient();
 
@@ -144,6 +166,16 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<any | null>(null);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [acquisitionDate, setAcquisitionDate] = useState<Date | undefined>();
+
+  React.useEffect(() => {
+    if (editingItem?.acquisition_date) {
+      setAcquisitionDate(new Date(editingItem.acquisition_date));
+    } else {
+      setAcquisitionDate(undefined);
+    }
+  }, [editingItem, isAdding]);
 
   // Table states
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
@@ -170,18 +202,24 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
   const [globalFilter, setGlobalFilter] = useState("");
   const [rowSelection, setRowSelection] = useState({});
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const filteredData = React.useMemo(() => {
+    let result = data;
+    if (statusFilter !== "all") {
+      result = result.filter(item => (item.status || "pending").toLowerCase() === statusFilter);
+    }
+
     if (categoryFilter === "ppe") {
-      return data.filter(item => Number(item.unit_value || 0) >= 50000);
+      return result.filter(item => Number(item.unit_value || 0) >= 50000);
     } else if (categoryFilter === "semi") {
-      return data.filter(item => {
+      return result.filter(item => {
         const val = Number(item.unit_value || 0);
         return val >= 5000 && val < 50000;
       });
     }
-    return data;
-  }, [data, categoryFilter]);
+    return result;
+  }, [data, categoryFilter, statusFilter]);
 
   // QR Modal States
   const [viewingQr, setViewingQr] = useState<any | null>(null);
@@ -206,6 +244,11 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
               <DropdownMenuItem onClick={() => setViewingQr(item)}>
                 <QrCode className="w-4 h-4 mr-2" /> View QR Code
               </DropdownMenuItem>
+              {isAdmin && item.status === "pending" && (
+                <DropdownMenuItem onClick={() => handleApprove(item.id)}>
+                  <CheckCircle className="w-4 h-4 mr-2" /> Approve
+                </DropdownMenuItem>
+              )}
               {isAdmin && (
                 <>
                   <DropdownMenuItem onClick={() => setEditingItem(item)}>
@@ -285,6 +328,20 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
 
   const selectedRowsData = table.getFilteredSelectedRowModel().rows.map(r => r.original);
 
+  const handleApprove = async (id: string) => {
+    const { error } = await supabase
+      .from("inventory_items")
+      .update({ status: "approved" })
+      .eq("id", id);
+
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      toast.success("Record approved successfully");
+    } else {
+      toast.error("Failed to approve item: " + error.message);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
@@ -312,6 +369,7 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
     console.log("Payload being sent:", payload);
 
     if (isAdding) {
+      (payload as any).status = isAdmin ? "approved" : "pending";
       const { data, error } = await supabase.from("inventory_items").insert([payload]);
       console.log("Insert response:", { data, error });
       if (!error) {
@@ -366,25 +424,42 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
     setIsDeleting(null);
   };
 
+  const handleBulkDelete = async () => {
+    const ids = selectedRowsData.map((r) => r.id);
+    if (!ids.length) return;
+
+    setIsDeleting("bulk");
+    const { error } = await supabase.from("inventory_items").delete().in("id", ids);
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      toast.success(`Successfully deleted ${ids.length} records`);
+      setRowSelection({}); // Clear table selection
+    } else {
+      toast.error("Failed to delete items: " + error.message);
+    }
+    setIsDeleting(null);
+    setBulkDeleteConfirm(false);
+  };
+
   const currentItem = isAdding ? {} : editingItem || {};
 
   return (
     <div className="w-full space-y-4">
       {/* Controls & Search */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="relative w-80">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search all columns..."
               value={globalFilter ?? ""}
               onChange={(event) => setGlobalFilter(event.target.value)}
-              className="pl-9 bg-card border-border rounded-full"
+              className="pl-9 bg-card border-border rounded-full w-full"
             />
           </div>
           
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[330px] bg-card border-border rounded-full">
+            <SelectTrigger className="w-full sm:w-[330px] bg-card border-border rounded-full">
               <SelectValue placeholder="Categorize item..." />
             </SelectTrigger>
             <SelectContent className="bg-card border-border">
@@ -393,16 +468,34 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
               <SelectItem value="semi">Semi-expendable properties - 5,000 to 49,999.00</SelectItem>
             </SelectContent>
           </Select>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[180px] bg-card border-border rounded-full">
+              <SelectValue placeholder="Filter logically" />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 lg:gap-3 justify-end">
           {selectedRowsData.length > 0 && (
-            <Button onClick={handleBulkPrint} variant="secondary" className="flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary/20">
-              <Printer className="w-4 h-4" /> Print {selectedRowsData.length} Label{selectedRowsData.length > 1 && 's'}
-            </Button>
+            <>
+              <Button onClick={handleBulkPrint} variant="secondary" className="flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary/20">
+                <Printer className="w-4 h-4" /> Print {selectedRowsData.length} Label{selectedRowsData.length > 1 && 's'}
+              </Button>
+              {isAdmin && (
+                <Button onClick={() => setBulkDeleteConfirm(true)} variant="destructive" className="flex items-center gap-2 bg-destructive/10 text-destructive hover:bg-destructive/20 border-none">
+                  <Trash2 className="w-4 h-4" /> Delete {selectedRowsData.length} Item{selectedRowsData.length > 1 && 's'}
+                </Button>
+              )}
+            </>
           )}
 
-          {isAdmin && (
+          {(isAdmin || isStaff) && (
             <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2">
               <Plus className="w-4 h-4" /> Add Data
             </Button>
@@ -410,7 +503,7 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" className="hidden sm:flex items-center gap-2">
                 <Settings2 className="w-4 h-4" /> Columns
               </Button>
             </DropdownMenuTrigger>
@@ -655,8 +748,30 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="acquisition_date">Acquisition Date</Label>
-                      <Input id="acquisition_date" name="acquisition_date" type="date" defaultValue={currentItem.acquisition_date} />
+                      <Label>Acquisition Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-start text-left font-normal bg-card border-border",
+                              !acquisitionDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {acquisitionDate ? format(acquisitionDate, "PPP") : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={acquisitionDate}
+                            onSelect={setAcquisitionDate}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <input type="hidden" name="acquisition_date" value={acquisitionDate ? format(acquisitionDate, "yyyy-MM-dd") : ""} />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="condition">Condition</Label>
@@ -781,6 +896,38 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false }: Ma
               }}
             >
               {isDeleting === deleteConfirmItem?.id ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Bulk Delete Records</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Are you sure you want to permanently delete {selectedRowsData.length} selected records?
+            </p>
+            <p className="text-xs text-destructive mt-4">This action cannot be undone.</p>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setBulkDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive"
+              disabled={isDeleting === "bulk"}
+              onClick={handleBulkDelete}
+            >
+              {isDeleting === "bulk" ? "Deleting..." : "Delete All Selected"}
             </Button>
           </div>
         </DialogContent>

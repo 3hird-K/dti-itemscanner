@@ -35,12 +35,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
@@ -149,14 +151,17 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
       cell: ({ row }) => {
         const role = row.getValue("account_type") as string;
         const isAdminCheck = role === "admin";
+        const isStaffCheck = role === "staff";
         
         return (
           <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
             isAdminCheck 
               ? "bg-primary/20 text-primary border border-primary/30" 
-              : "bg-muted text-muted-foreground"
+              : isStaffCheck
+                ? "bg-amber-500/20 text-amber-500 border border-amber-500/30"
+                : "bg-muted text-muted-foreground"
           }`}>
-            {isAdminCheck ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
+            {isAdminCheck ? <Shield className="w-3 h-3" /> : isStaffCheck ? <User className="w-3 h-3" /> : <User className="w-3 h-3" />}
             {role ? role.charAt(0).toUpperCase() + role.slice(1) : "User"}
           </div>
         );
@@ -350,52 +355,73 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
         </div>
       </div>
 
-      {/* Edit User Form Dialog */}
-      <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit User Profile</DialogTitle>
-          </DialogHeader>
+      {/* Edit User Form Sheet */}
+      <Sheet open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
+        <SheetContent className="sm:max-w-md w-[400px] sm:w-[540px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Edit User Profile</SheetTitle>
+            <SheetDescription className="sr-only">Update user data and role access here.</SheetDescription>
+          </SheetHeader>
+          
           {editingItem && (
-            <form onSubmit={handleEditSave} className="space-y-4 pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="firstname">First Name</Label>
-                  <Input id="firstname" name="firstname" defaultValue={editingItem.firstname} required />
+            <div className="flex flex-col py-6">
+              <div className="flex flex-col items-center text-center space-y-3 mb-8 pb-6 border-b border-border/50">
+                <Avatar className="w-24 h-24 border-[4px] border-background shadow-lg shadow-black/10">
+                  <AvatarFallback className="text-3xl font-medium tracking-tight bg-primary/10 text-primary">
+                    {(editingItem.firstname?.charAt(0) || "") + (editingItem.lastname?.charAt(0) || "")}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-semibold text-xl tracking-tight">{editingItem.firstname} {editingItem.lastname}</h3>
+                  <p className="text-sm text-muted-foreground">{editingItem.email}</p>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="lastname">Last Name</Label>
-                  <Input id="lastname" name="lastname" defaultValue={editingItem.lastname} required />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" defaultValue={editingItem.email} disabled className="opacity-50 cursor-not-allowed" title="Emails must be maintained through secure auth endpoints." />
-              </div>
-              <div className="grid gap-2 mt-4">
-                <Label htmlFor="account_type">Account Type (Role)</Label>
-                <Select name="account_type" defaultValue={editingItem.account_type || "user"}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">User (Read-only)</SelectItem>
-                    <SelectItem value="admin">Administrator (Full Access)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Administrators have full CRUD access across all tables automatically.
-                </p>
               </div>
 
-              <DialogFooter className="mt-6">
-                <Button type="button" variant="outline" onClick={() => setEditingItem(null)}>Cancel</Button>
-                <Button type="submit">Save Changes</Button>
-              </DialogFooter>
-            </form>
+              <form onSubmit={handleEditSave} className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="firstname">First Name</Label>
+                    <Input id="firstname" name="firstname" defaultValue={editingItem.firstname} required />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="lastname">Last Name</Label>
+                    <Input id="lastname" name="lastname" defaultValue={editingItem.lastname} required />
+                  </div>
+                </div>
+                
+                <div className="grid gap-2 pt-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" name="email" defaultValue={editingItem.email} disabled className="opacity-50 cursor-not-allowed bg-muted/50" title="Emails must be maintained through secure auth endpoints." />
+                </div>
+                
+                <div className="grid gap-2 pt-2">
+                  <Label htmlFor="account_type">Account Type (Role)</Label>
+                  <Select name="account_type" defaultValue={editingItem.account_type || "user"}>
+                    <SelectTrigger className="w-full bg-card">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">User (Read-only)</SelectItem>
+                      <SelectItem value="staff">Staff (Semi-Access)</SelectItem>
+                      <SelectItem value="admin">Administrator (Full Access)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] font-medium text-muted-foreground mt-1.5 leading-relaxed bg-muted/50 p-2.5 rounded-lg border border-border/30">
+                    Administrators have full CRUD access. Staff can add data but requires an Admin to officially approve it.
+                  </p>
+                </div>
+
+                <SheetFooter className="mt-8 pt-6 border-t border-border/50">
+                  <div className="flex flex-col sm:flex-row gap-3 w-full">
+                    <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingItem(null)}>Cancel</Button>
+                    <Button type="submit" className="flex-1">Save Changes</Button>
+                  </div>
+                </SheetFooter>
+              </form>
+            </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

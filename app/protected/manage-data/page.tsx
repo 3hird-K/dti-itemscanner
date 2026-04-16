@@ -13,6 +13,7 @@ export default function ManageDataPage() {
   const supabase = createClient()
   const { data: profile } = useProfile()
   const isAdmin = profile?.account_type === "admin"
+  const isStaff = profile?.account_type === "staff"
 
   const { data: inventory = [], isLoading } = useQuery({
     queryKey: ["inventory"],
@@ -47,7 +48,7 @@ export default function ManageDataPage() {
       <Separator className="border-t border-border opacity-50 block h-[1px] w-full" />
 
       {/* --- TABLE CONTENT --- */}
-      <ManageDataTable data={inventory} isLoading={isLoading} isAdmin={isAdmin} />
+      <ManageDataTable data={inventory} isLoading={isLoading} isAdmin={isAdmin} isStaff={isStaff} />
     </div>
   )
 }
