@@ -157,7 +157,7 @@ export function Footer() {
           </div>
 
           <div className="border-t border-gray-700 mt-12 pt-8 flex justify-between items-center text-xs ">
-            <p>
+            {/* <p>
               Developed by{" "}
               <a
                 href="https://github.com/3hird-K"
@@ -167,7 +167,7 @@ export function Footer() {
               >
                 3hirdK
               </a>
-            </p>
+            </p> */}
             <p>
               Powered by{" "}
               <a
