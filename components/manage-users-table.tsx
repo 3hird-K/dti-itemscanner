@@ -42,7 +42,7 @@ import {
   SheetFooter,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
@@ -104,7 +104,7 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to completely delete this user? This will remove both the profile AND authentication account permanently.")) return;
     setIsDeleting(id);
-    
+
     try {
       const response = await fetch("/api/users/delete-user", {
         method: "POST",
@@ -127,7 +127,19 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
     setIsDeleting(null);
   };
 
-  const baseColumns: ColumnDef<any>[] = [
+  const resolvedColumns: ColumnDef<any>[] = [
+    {
+      accessorKey: "id",
+      header: "Profile ID",
+      cell: ({ row }) => (
+        <button
+          onClick={() => setEditingItem(row.original)}
+          className="font-mono text-xs font-semibold text-primary hover:underline cursor-pointer px-2 py-1 rounded-md transition-colors hover:bg-primary/20"
+        >
+          {String(row.getValue("id")).split('-')[0].toUpperCase()}
+        </button>
+      ),
+    },
     {
       accessorKey: "firstname",
       header: "First Name",
@@ -152,15 +164,14 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
         const role = row.getValue("account_type") as string;
         const isAdminCheck = role === "admin";
         const isStaffCheck = role === "staff";
-        
+
         return (
-          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-            isAdminCheck 
-              ? "bg-primary/20 text-primary border border-primary/30" 
-              : isStaffCheck
-                ? "bg-amber-500/20 text-amber-500 border border-amber-500/30"
-                : "bg-muted text-muted-foreground"
-          }`}>
+          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${isAdminCheck
+            ? "bg-primary/20 text-primary border border-primary/30"
+            : isStaffCheck
+              ? "bg-amber-500/20 text-amber-500 border border-amber-500/30"
+              : "bg-muted text-muted-foreground"
+            }`}>
             {isAdminCheck ? <Shield className="w-3 h-3" /> : isStaffCheck ? <User className="w-3 h-3" /> : <User className="w-3 h-3" />}
             {role ? role.charAt(0).toUpperCase() + role.slice(1) : "User"}
           </div>
@@ -168,41 +179,6 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
       },
     },
   ];
-
-  let resolvedColumns = [...baseColumns];
-
-  if (isAdmin) {
-    resolvedColumns.push({
-      id: "actions",
-      header: "",
-      cell: ({ row }) => {
-        const item = row.original;
-        return (
-          <div className="text-right">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setEditingItem(item)}>
-                  <Edit className="w-4 h-4 mr-2" /> Edit Permissions
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
-                  onClick={() => handleDelete(item.id)}
-                  disabled={isDeleting === item.id}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" /> Delete Data
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        );
-      },
-    });
-  }
 
   const table = useReactTable({
     data,
@@ -357,16 +333,19 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
 
       {/* Edit User Form Sheet */}
       <Sheet open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
-        <SheetContent className="sm:max-w-md w-[400px] sm:w-[540px] overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Edit User Profile</SheetTitle>
             <SheetDescription className="sr-only">Update user data and role access here.</SheetDescription>
           </SheetHeader>
-          
+
           {editingItem && (
-            <div className="flex flex-col py-6">
+            <div className="flex flex-col py-6 w-full">
               <div className="flex flex-col items-center text-center space-y-3 mb-8 pb-6 border-b border-border/50">
                 <Avatar className="w-24 h-24 border-[4px] border-background shadow-lg shadow-black/10">
+                  {editingItem.avatar_url && (
+                    <AvatarImage src={editingItem.avatar_url} alt="Profile Picture" className="object-cover" />
+                  )}
                   <AvatarFallback className="text-3xl font-medium tracking-tight bg-primary/10 text-primary">
                     {(editingItem.firstname?.charAt(0) || "") + (editingItem.lastname?.charAt(0) || "")}
                   </AvatarFallback>
@@ -377,26 +356,21 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
                 </div>
               </div>
 
-              <form onSubmit={handleEditSave} className="space-y-4">
+              <form onSubmit={handleEditSave} className="space-y-4 px-5">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="firstname">First Name</Label>
-                    <Input id="firstname" name="firstname" defaultValue={editingItem.firstname} required />
+                    <Input id="firstname" name="firstname" defaultValue={editingItem.firstname} required disabled={!isAdmin} />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="lastname">Last Name</Label>
-                    <Input id="lastname" name="lastname" defaultValue={editingItem.lastname} required />
+                    <Input id="lastname" name="lastname" defaultValue={editingItem.lastname} required disabled={!isAdmin} />
                   </div>
                 </div>
-                
-                <div className="grid gap-2 pt-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" name="email" defaultValue={editingItem.email} disabled className="opacity-50 cursor-not-allowed bg-muted/50" title="Emails must be maintained through secure auth endpoints." />
-                </div>
-                
+
                 <div className="grid gap-2 pt-2">
                   <Label htmlFor="account_type">Account Type (Role)</Label>
-                  <Select name="account_type" defaultValue={editingItem.account_type || "user"}>
+                  <Select name="account_type" defaultValue={editingItem.account_type || "user"} disabled={!isAdmin}>
                     <SelectTrigger className="w-full bg-card">
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
@@ -411,11 +385,26 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
                   </p>
                 </div>
 
-                <SheetFooter className="mt-8 pt-6 border-t border-border/50">
-                  <div className="flex flex-col sm:flex-row gap-3 w-full">
-                    <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingItem(null)}>Cancel</Button>
-                    <Button type="submit" className="flex-1">Save Changes</Button>
+                <SheetFooter className="mt-8 pt-6 border-t border-border/50 block space-y-3 sm:space-y-3 sm:space-x-0 w-full px-0">
+                  <div className="flex gap-3 w-full">
+                    <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingItem(null)}>
+                      {isAdmin ? "Cancel" : "Close"}
+                    </Button>
+                    {isAdmin && (
+                      <Button type="submit" className="flex-1">Save Changes</Button>
+                    )}
                   </div>
+                  {isAdmin && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="w-full mt-3"
+                      disabled={isDeleting === editingItem.id}
+                      onClick={() => handleDelete(editingItem.id)}
+                    >
+                      {isDeleting === editingItem.id ? "Deleting..." : "Delete Profile"}
+                    </Button>
+                  )}
                 </SheetFooter>
               </form>
             </div>
