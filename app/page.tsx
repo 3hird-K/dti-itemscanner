@@ -158,6 +158,17 @@ export function Footer() {
 
           <div className="border-t border-gray-700 mt-12 pt-8 flex justify-between items-center text-xs ">
             <p>
+              Developed by{" "}
+              <a
+                href="https://github.com/3hird-K"
+                target="_blank"
+                className="font-semibold"
+                rel="noreferrer"
+              >
+                3hirdK
+              </a>
+            </p>
+            <p>
               Powered by{" "}
               <a
                 href="https://www.dti.gov.ph/"
@@ -165,9 +176,10 @@ export function Footer() {
                 className="font-bold"
                 rel="noreferrer"
               >
-                DTI-CDO
+                DTI-Misamis Oriental
               </a>
             </p>
+
             <ThemeSwitcher />
           </div>
         </div>
