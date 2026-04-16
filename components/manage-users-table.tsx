@@ -35,6 +35,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -73,6 +79,7 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
 
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState<string | null>(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
@@ -101,8 +108,8 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to completely delete this user? This will remove both the profile AND authentication account permanently.")) return;
+  const handleDelete = async (id: string | null) => {
+    if (!id) return;
     setIsDeleting(id);
 
     try {
@@ -116,15 +123,18 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
         const errorData = await response.json();
         toast.error("Failed to delete user: " + (errorData.error || "Unknown error"));
         setIsDeleting(null);
+        setDeleteConfirmUser(null);
         return;
       }
 
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       toast.success("User completely deleted (profile + auth account)");
+      setEditingItem(null);
     } catch (error) {
       toast.error("Error deleting user: " + (error as Error).message);
     }
     setIsDeleting(null);
+    setDeleteConfirmUser(null);
   };
 
   const resolvedColumns: ColumnDef<any>[] = [
@@ -399,8 +409,8 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
                       type="button"
                       variant="destructive"
                       className="w-full mt-3"
-                      disabled={isDeleting === editingItem.id}
-                      onClick={() => handleDelete(editingItem.id)}
+                      disabled={isDeleting === editingItem.id || deleteConfirmUser === editingItem.id}
+                      onClick={() => setDeleteConfirmUser(editingItem.id)}
                     >
                       {isDeleting === editingItem.id ? "Deleting..." : "Delete Profile"}
                     </Button>
@@ -411,6 +421,41 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Delete User Form Dialog */}
+      <Dialog open={!!deleteConfirmUser} onOpenChange={(open) => !open && setDeleteConfirmUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete User Account</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-foreground mb-4 font-medium">
+              Are you absolutely sure you want to delete this user?
+            </p>
+            <p className="text-[12px] font-medium text-destructive mt-4 leading-relaxed bg-destructive/10 p-3 rounded-md border border-destructive/20">
+              This action cannot be undone. This will permanently remove their user profile as well as their main authentication account!
+            </p>
+          </div>
+          <div className="flex gap-3 justify-end mt-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setDeleteConfirmUser(null)}
+              disabled={!!isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive"
+              disabled={!!isDeleting}
+              onClick={() => handleDelete(deleteConfirmUser)}
+            >
+              {isDeleting ? "Deleting..." : "Yes, Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
