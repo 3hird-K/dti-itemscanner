@@ -44,11 +44,11 @@ const faqItems = [
     ],
   },
   {
-    category: "QR Scanner & Inventory",
+    category: "DTI-FASTrack & Inventory",
     questions: [
       {
         q: "How do I scan a QR code?",
-        a: "Open the DTI QR Scanner app and point your device camera at the QR code. The system will automatically capture the code and log the inventory item. Make sure the QR code is clearly visible and well-lit for accurate scanning.",
+        a: "Open the DTI–FASTrack app and point your device camera at the QR code. The system will automatically capture the code and log the inventory item. Make sure the QR code is clearly visible and well-lit for accurate scanning.",
       },
       {
         q: "What information is captured when I scan a QR code?",
@@ -158,7 +158,7 @@ const userGuides = [
   {
     icon: IconBook,
     title: "Getting Started",
-    description: "Learn the basics of navigating the DTI QR Scanner system.",
+    description: "Learn the basics of navigating the DTI–FASTrack system.",
     steps: [
       "Log in with your credentials at the login page.",
       "You will be redirected to the Dashboard, which shows an overview of your system activity.",
@@ -172,7 +172,7 @@ const userGuides = [
     title: "Scanning QR Codes",
     description: "Master the QR scanning functionality for efficient inventory tracking.",
     steps: [
-      "Open your device and access the DTI QR Scanner interface from the main dashboard.",
+      "Open your device and access the DTI–FASTrack interface from the main dashboard.",
       "Position the camera over the QR code at a distance of 6-8 inches for optimal recognition.",
       "Ensure adequate lighting - avoid shadows and glare on the QR code.",
       "The system will automatically detect and scan the code when it's clearly visible.",

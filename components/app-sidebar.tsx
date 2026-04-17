@@ -65,8 +65,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 className="hidden dark:block"
               />
             </div>
-            <span className="font-semibold text-sm truncate group-data-[collapsible=icon]:hidden">
-              DTI QR Scanner
+            <span className="flex flex-col group-data-[collapsible=icon]:hidden">
+              <span className="font-semibold text-sm truncate">
+                DTI–FASTrack
+              </span>
+              <span className="font-light text-xs">
+                Fast Asset Scanning and Tracking System
+              </span>
             </span>
           </a>
         </div>

@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     await transporter.sendMail({
       from: process.env.SUPPORT_EMAIL,
       to: userEmail,
-      subject: "Support Ticket Confirmation - DTI QR Scanner",
+      subject: "Support Ticket Confirmation - DTI–FASTrack",
       html: userEmailContent,
     });
 
