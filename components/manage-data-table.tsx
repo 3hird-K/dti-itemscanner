@@ -44,7 +44,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useProfile } from "@/hooks/use-profile";
 import {
   MoreHorizontal,
   Edit,
@@ -133,7 +134,24 @@ const columnsDef: ColumnDef<any>[] = [
   { accessorKey: "office_center", header: "Office/Center" },
   { accessorKey: "serial_number", header: "Serial No." },
   { accessorKey: "ngas_number", header: "NGAS No." },
-  { accessorKey: "property_number", header: "Property No." },
+  { 
+    accessorKey: "property_number", 
+    header: "Property No.",
+    cell: ({ row }) => {
+      const propertyNumber = row.getValue("property_number") as string;
+      const pendingEdits = row.original.pendingEdits || false;
+      return (
+        <div className="flex items-center gap-2">
+          <span>{propertyNumber}</span>
+          {pendingEdits && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/20 text-blue-500 border border-blue-500/30">
+              Pending Edit
+            </span>
+          )}
+        </div>
+      );
+    }
+  },
   { accessorKey: "unit_of_measure", header: "Unit" },
   {
     accessorKey: "unit_value",
@@ -159,6 +177,34 @@ const columnsDef: ColumnDef<any>[] = [
 export function ManageDataTable({ data, isLoading = false, isAdmin = false, isStaff = false }: ManageDataTableProps) {
   const supabase = createClient();
   const queryClient = useQueryClient();
+  const { data: profile } = useProfile();
+
+  // Fetch pending edits for current user (or all if admin, though badge only needs existence)
+  const { data: pendingEditsData } = useQuery({
+    queryKey: ["pending_edits"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pending_edits")
+        .select("item_id")
+        .eq("status", "pending");
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Map pending edits
+  const pendingEditItems = React.useMemo(() => {
+    return new Set(pendingEditsData?.map(edit => edit.item_id) || []);
+  }, [pendingEditsData]);
+
+  // Attach pending flag to data
+  const dataWithPending = React.useMemo(() => {
+    return data.map(item => ({
+      ...item,
+      pendingEdits: pendingEditItems.has(item.id)
+    }));
+  }, [data, pendingEditItems]);
 
   // Dialog & Form states
   const [editingItem, setEditingItem] = useState<any | null>(null);
@@ -205,7 +251,7 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const filteredData = React.useMemo(() => {
-    let result = data;
+    let result = dataWithPending;
     if (statusFilter !== "all") {
       result = result.filter(item => (item.status || "pending").toLowerCase() === statusFilter);
     }
@@ -219,7 +265,7 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
       });
     }
     return result;
-  }, [data, categoryFilter, statusFilter]);
+  }, [dataWithPending, categoryFilter, statusFilter]);
 
   // QR Modal States
   const [viewingQr, setViewingQr] = useState<any | null>(null);
@@ -249,19 +295,19 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
                   <CheckCircle className="w-4 h-4 mr-2" /> Approve
                 </DropdownMenuItem>
               )}
+              {(isAdmin || isStaff) && (
+                <DropdownMenuItem onClick={() => setEditingItem(item)}>
+                  <Edit className="w-4 h-4 mr-2" /> Edit Records
+                </DropdownMenuItem>
+              )}
               {isAdmin && (
-                <>
-                  <DropdownMenuItem onClick={() => setEditingItem(item)}>
-                    <Edit className="w-4 h-4 mr-2" /> Edit Records
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
-                    onClick={() => setDeleteConfirmItem(item)}
-                    disabled={isDeleting === item.id}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" /> Delete
-                  </DropdownMenuItem>
-                </>
+                <DropdownMenuItem
+                  className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                  onClick={() => setDeleteConfirmItem(item)}
+                  disabled={isDeleting === item.id}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                </DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -382,20 +428,46 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
         toast.error("Error adding item: " + error.message);
       }
     } else if (editingItem) {
-      const { data, error } = await supabase
-        .from("inventory_items")
-        .update(payload)
-        .eq("id", editingItem.id);
-
-      console.log("Update response:", { data, error });
-      if (!error) {
-        setEditingItem(null);
-        setCurrentStep(1);
-        queryClient.invalidateQueries({ queryKey: ["inventory"] });
-        toast.success("Record updated successfully");
+      if (!isAdmin) {
+        // Staff edit - create pending edit
+        if (!profile?.id) {
+          toast.error("User profile not found. Cannot submit edit.");
+          return;
+        }
+        const { data, error } = await supabase.from("pending_edits").insert([{
+          item_id: editingItem.id,
+          submitted_by: profile.id,
+          changes: payload,
+          status: "pending"
+        }]);
+        
+        if (!error) {
+          setEditingItem(null);
+          setCurrentStep(1);
+          queryClient.invalidateQueries({ queryKey: ["inventory"] });
+          queryClient.invalidateQueries({ queryKey: ["pending_edits"] });
+          toast.success("Edit submitted for admin approval.");
+        } else {
+          console.error("Pending edit insert error details:", error);
+          toast.error("Error submitting edit: " + error.message);
+        }
       } else {
-        console.error("Update error details:", error);
-        toast.error("Error updating item: " + error.message);
+        // Admin edit - direct update
+        const { data, error } = await supabase
+          .from("inventory_items")
+          .update(payload)
+          .eq("id", editingItem.id);
+
+        console.log("Update response:", { data, error });
+        if (!error) {
+          setEditingItem(null);
+          setCurrentStep(1);
+          queryClient.invalidateQueries({ queryKey: ["inventory"] });
+          toast.success("Record updated successfully");
+        } else {
+          console.error("Update error details:", error);
+          toast.error("Error updating item: " + error.message);
+        }
       }
     }
   };
