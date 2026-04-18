@@ -382,7 +382,7 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
                     title={onlineUserIds.includes(editingItem.id) ? 'Online' : 'Offline'}
                   >
                     {onlineUserIds.includes(editingItem.id) && (
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50"></span>
+                      <span className="inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50"></span>
                     )}
                   </span>
                 </div>
