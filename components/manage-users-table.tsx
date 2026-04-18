@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useOnlinePresence } from "@/components/online-presence-provider";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -82,6 +83,7 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<string | null>(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const onlineUserIds = useOnlinePresence();
 
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,14 +143,25 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
     {
       accessorKey: "id",
       header: "Profile ID",
-      cell: ({ row }) => (
-        <button
-          onClick={() => setEditingItem(row.original)}
-          className="font-mono text-xs font-semibold text-primary hover:underline cursor-pointer px-2 py-1 rounded-md transition-colors hover:bg-primary/20"
-        >
-          {String(row.getValue("id")).split('-')[0].toUpperCase()}
-        </button>
-      ),
+      cell: ({ row }) => {
+        const isOnline = onlineUserIds.includes(row.original.id);
+        return (
+          <div className="flex items-center gap-1.5">
+            {isOnline && (
+              <span className="relative flex h-2.5 w-2.5" title="Online">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+            )}
+            <button
+              onClick={() => setEditingItem(row.original)}
+              className="font-mono text-xs font-semibold text-primary hover:underline cursor-pointer px-2 py-1 rounded-md transition-colors hover:bg-primary/20"
+            >
+              {String(row.getValue("id")).split('-')[0].toUpperCase()}
+            </button>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "firstname",
@@ -351,15 +364,28 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
 
           {editingItem && (
             <div className="flex flex-col py-6 w-full">
-              <div className="flex flex-col items-center text-center space-y-3 mb-8 pb-6 border-b border-border/50">
-                <Avatar className="w-24 h-24 border-[4px] border-background shadow-lg shadow-black/10">
-                  {editingItem.avatar_url && (
-                    <AvatarImage src={editingItem.avatar_url} alt="Profile Picture" className="object-cover" />
-                  )}
-                  <AvatarFallback className="text-3xl font-medium tracking-tight bg-primary/10 text-primary">
-                    {(editingItem.firstname?.charAt(0) || "") + (editingItem.lastname?.charAt(0) || "")}
-                  </AvatarFallback>
-                </Avatar>
+              <div className="flex flex-col items-center text-center space-y-4 mb-8 pb-6 border-b border-border/50">
+                <div className="relative inline-block">
+                  <Avatar className="w-24 h-24 border-[4px] border-background shadow-lg shadow-black/10">
+                    {editingItem.avatar_url && (
+                      <AvatarImage src={editingItem.avatar_url} alt="Profile Picture" className="object-cover" />
+                    )}
+                    <AvatarFallback className="text-3xl font-medium tracking-tight bg-primary/10 text-primary">
+                      {(editingItem.firstname?.charAt(0) || "") + (editingItem.lastname?.charAt(0) || "")}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  {/* Online/Offline Status Indicator */}
+                  <span
+                    className={`absolute bottom-1 right-1 w-6 h-6 rounded-full border-[3px] border-background shadow-sm transition-colors duration-300 ${onlineUserIds.includes(editingItem.id) ? 'bg-emerald-500' : 'bg-slate-400/80'
+                      }`}
+                    title={onlineUserIds.includes(editingItem.id) ? 'Online' : 'Offline'}
+                  >
+                    {onlineUserIds.includes(editingItem.id) && (
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50"></span>
+                    )}
+                  </span>
+                </div>
                 <div>
                   <h3 className="font-semibold text-xl tracking-tight">{editingItem.firstname} {editingItem.lastname}</h3>
                   <p className="text-sm text-muted-foreground">{editingItem.email}</p>
@@ -437,16 +463,16 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
             </p>
           </div>
           <div className="flex gap-3 justify-end mt-2">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => setDeleteConfirmUser(null)}
               disabled={!!isDeleting}
             >
               Cancel
             </Button>
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               variant="destructive"
               disabled={!!isDeleting}
               onClick={() => handleDelete(deleteConfirmUser)}

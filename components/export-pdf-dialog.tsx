@@ -12,10 +12,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Calendar as CalendarIcon } from "lucide-react";
 import { generateRpcppePdf } from "@/lib/generate-rpcppe-pdf";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface ExportPdfDialogProps {
   inventory: any[];
@@ -126,12 +133,29 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
 
             <div className="grid gap-2">
               <Label htmlFor="asOfDate">As of Date (Filters items created on/before)</Label>
-              <Input
-                id="asOfDate"
-                type="date"
-                value={asOfDate}
-                onChange={(e) => setAsOfDate(e.target.value)}
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="asOfDate"
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !asOfDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {asOfDate ? format(parseISO(asOfDate), "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={asOfDate ? parseISO(asOfDate) : undefined}
+                    onSelect={(date) => date && setAsOfDate(format(date, "yyyy-MM-dd"))}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="grid gap-2">
@@ -145,15 +169,35 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
 
             <div className="grid gap-2">
               <Label htmlFor="accountabilityDate">Accountability Date</Label>
-              <Input
-                id="accountabilityDate"
-                type="date"
-                value={accountabilityDate}
-                onChange={(e) => {
-                  setAccountabilityDate(e.target.value);
-                  setAccountableOfficer(`JESUSA M. ABEAR, OIC - Provincial Director, DTI Misamis Oriental is accountable, having assumed accountability on ${format(new Date(e.target.value), "MMM d, yyyy")}`);
-                }}
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="accountabilityDate"
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !accountabilityDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {accountabilityDate ? format(parseISO(accountabilityDate), "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={accountabilityDate ? parseISO(accountabilityDate) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        const dateString = format(date, "yyyy-MM-dd");
+                        setAccountabilityDate(dateString);
+                        setAccountableOfficer(`JESUSA M. ABEAR, OIC - Provincial Director, DTI Misamis Oriental is accountable, having assumed accountability on ${format(date, "MMM d, yyyy")}`);
+                      }
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         )}
