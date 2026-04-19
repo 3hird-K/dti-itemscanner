@@ -5,9 +5,12 @@ import { createClient } from "@/lib/supabase/client";
 
 const OnlinePresenceContext = createContext<string[]>([]);
 
+// Create a single stable Supabase client instance outside the component
+// so Realtime Presence channels don't break on re-renders
+const supabase = createClient();
+
 export function OnlinePresenceProvider({ children }: { children: React.ReactNode }) {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-  const supabase = createClient();
 
   useEffect(() => {
     let isMounted = true;
@@ -15,7 +18,7 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
 
     const setupPresence = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!isMounted || !user) return;
 
       channel = supabase.channel("online-users-global", {
@@ -60,7 +63,7 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
         supabase.removeChannel(channel);
       }
     };
-  }, [supabase]);
+  }, []); // Empty deps — supabase is now a stable module-level singleton
 
   return (
     <OnlinePresenceContext.Provider value={onlineUsers}>
