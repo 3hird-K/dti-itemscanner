@@ -1,138 +1,108 @@
-// "use client";
-
-// import { useEffect, useState, createContext, useContext } from "react";
-// import { createClient } from "@/lib/supabase/client";
-
-// const OnlinePresenceContext = createContext<string[]>([]);
-
-// // Create a single stable Supabase client instance outside the component
-// // so Realtime Presence channels don't break on re-renders
-// const supabase = createClient();
-
-// export function OnlinePresenceProvider({ children }: { children: React.ReactNode }) {
-//   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-
-//   useEffect(() => {
-//     let isMounted = true;
-//     let channel: any = null;
-
-//     const setupPresence = async () => {
-//       const { data: { user } } = await supabase.auth.getUser();
-
-//       if (!isMounted || !user) return;
-
-//       channel = supabase.channel("online-users-global", {
-//         config: {
-//           presence: {
-//             key: user.id,
-//           },
-//         },
-//       });
-
-//       channel
-//         .on("presence", { event: "sync" }, () => {
-//           const newState = channel.presenceState();
-//           const onlineIds: string[] = [];
-//           for (const key in newState) {
-//             // @ts-ignore
-//             const presenceRecords = newState[key];
-//             presenceRecords.forEach((record: any) => {
-//               if (record.user_id && !onlineIds.includes(record.user_id)) {
-//                 onlineIds.push(record.user_id);
-//               }
-//             });
-//           }
-//           setOnlineUsers(onlineIds);
-//         })
-//         .subscribe(async (status: string) => {
-//           if (status === "SUBSCRIBED") {
-//             await channel.track({
-//               user_id: user.id,
-//               online_at: new Date().toISOString(),
-//             });
-//           }
-//         });
-//     };
-
-//     setupPresence();
-
-//     return () => {
-//       isMounted = false;
-//       if (channel) {
-//         channel.untrack();
-//         supabase.removeChannel(channel);
-//       }
-//     };
-//   }, []); // Empty deps — supabase is now a stable module-level singleton
-
-//   return (
-//     <OnlinePresenceContext.Provider value={onlineUsers}>
-//       {children}
-//     </OnlinePresenceContext.Provider>
-//   );
-// }
-
-// export function useOnlinePresence() {
-//   return useContext(OnlinePresenceContext);
-// }
-
 "use client";
 
-import { useEffect, useState, createContext, useContext } from "react";
+import {
+  useEffect,
+  useState,
+  useRef,
+  createContext,
+  useContext,
+} from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 
 const OnlinePresenceContext = createContext<string[]>([]);
 
-const supabase = createClient();
-
-export function OnlinePresenceProvider({ children }: { children: React.ReactNode }) {
+export function OnlinePresenceProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  // Keep a stable supabase client instance for the lifetime of this component
+  const supabaseRef = useRef<SupabaseClient | null>(null);
+  if (!supabaseRef.current) {
+    supabaseRef.current = createClient();
+  }
 
   useEffect(() => {
-    let isMounted = true;
-    let channel: any = null;
+    const supabase = supabaseRef.current!;
+    let channel: RealtimeChannel | null = null;
 
-    const setupPresence = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+    // ----- helpers -----
+    const teardown = () => {
+      if (channel) {
+        channel.untrack();
+        supabase.removeChannel(channel);
+        channel = null;
+      }
+      setOnlineUsers([]);
+    };
 
-      if (!isMounted || !user) return;
+    const setupPresence = async (userId: string) => {
+      // Clean up any existing channel first
+      teardown();
 
       channel = supabase.channel("online-users-global", {
         config: {
-          presence: {
-            key: user.id, // This makes user.id the key in presenceState
-          },
+          presence: { key: userId },
         },
       });
 
       channel
         .on("presence", { event: "sync" }, () => {
-          const newState = channel.presenceState();
-
-          // SIMPLIFIED: Since 'user.id' is the key, just grab the keys!
-          const onlineIds = Object.keys(newState);
-          setOnlineUsers(onlineIds);
+          if (!channel) return;
+          const state = channel.presenceState();
+          // Since user.id is the presence key, Object.keys gives us all online user IDs
+          setOnlineUsers(Object.keys(state));
         })
-        .subscribe(async (status: string) => {
-          if (status === "SUBSCRIBED") {
+        .on("presence", { event: "join" }, ({ key }) => {
+          // Optimistically add when a user joins before sync fires
+          setOnlineUsers((prev) =>
+            prev.includes(key) ? prev : [...prev, key]
+          );
+        })
+        .on("presence", { event: "leave" }, ({ key }) => {
+          setOnlineUsers((prev) => prev.filter((id) => id !== key));
+        })
+        .subscribe(async (status) => {
+          if (status === "SUBSCRIBED" && channel) {
             await channel.track({
-              user_id: user.id,
+              user_id: userId,
               online_at: new Date().toISOString(),
             });
+          }
+
+          // Reconnect automatically on channel error or closed state
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            console.warn(
+              "[OnlinePresence] Channel issue detected, reconnecting…",
+              status
+            );
+            // Brief delay before reconnect to avoid tight loops
+            setTimeout(() => setupPresence(userId), 3_000);
           }
         });
     };
 
-    setupPresence();
+    // ----- drive presence off auth state -----
+    // This fires immediately with the current session AND on every future
+    // sign-in / sign-out, so we never miss the initial authenticated state.
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session?.user) {
+          setupPresence(session.user.id);
+        } else {
+          // User logged out — stop broadcasting presence
+          teardown();
+        }
+      }
+    );
 
     return () => {
-      isMounted = false;
-      if (channel) {
-        channel.untrack();
-        supabase.removeChannel(channel);
-      }
+      authListener.subscription.unsubscribe();
+      teardown();
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <OnlinePresenceContext.Provider value={onlineUsers}>
