@@ -1,3 +1,81 @@
+// "use client";
+
+// import { useEffect, useState, createContext, useContext } from "react";
+// import { createClient } from "@/lib/supabase/client";
+
+// const OnlinePresenceContext = createContext<string[]>([]);
+
+// // Create a single stable Supabase client instance outside the component
+// // so Realtime Presence channels don't break on re-renders
+// const supabase = createClient();
+
+// export function OnlinePresenceProvider({ children }: { children: React.ReactNode }) {
+//   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+
+//   useEffect(() => {
+//     let isMounted = true;
+//     let channel: any = null;
+
+//     const setupPresence = async () => {
+//       const { data: { user } } = await supabase.auth.getUser();
+
+//       if (!isMounted || !user) return;
+
+//       channel = supabase.channel("online-users-global", {
+//         config: {
+//           presence: {
+//             key: user.id,
+//           },
+//         },
+//       });
+
+//       channel
+//         .on("presence", { event: "sync" }, () => {
+//           const newState = channel.presenceState();
+//           const onlineIds: string[] = [];
+//           for (const key in newState) {
+//             // @ts-ignore
+//             const presenceRecords = newState[key];
+//             presenceRecords.forEach((record: any) => {
+//               if (record.user_id && !onlineIds.includes(record.user_id)) {
+//                 onlineIds.push(record.user_id);
+//               }
+//             });
+//           }
+//           setOnlineUsers(onlineIds);
+//         })
+//         .subscribe(async (status: string) => {
+//           if (status === "SUBSCRIBED") {
+//             await channel.track({
+//               user_id: user.id,
+//               online_at: new Date().toISOString(),
+//             });
+//           }
+//         });
+//     };
+
+//     setupPresence();
+
+//     return () => {
+//       isMounted = false;
+//       if (channel) {
+//         channel.untrack();
+//         supabase.removeChannel(channel);
+//       }
+//     };
+//   }, []); // Empty deps — supabase is now a stable module-level singleton
+
+//   return (
+//     <OnlinePresenceContext.Provider value={onlineUsers}>
+//       {children}
+//     </OnlinePresenceContext.Provider>
+//   );
+// }
+
+// export function useOnlinePresence() {
+//   return useContext(OnlinePresenceContext);
+// }
+
 "use client";
 
 import { useEffect, useState, createContext, useContext } from "react";
@@ -5,8 +83,6 @@ import { createClient } from "@/lib/supabase/client";
 
 const OnlinePresenceContext = createContext<string[]>([]);
 
-// Create a single stable Supabase client instance outside the component
-// so Realtime Presence channels don't break on re-renders
 const supabase = createClient();
 
 export function OnlinePresenceProvider({ children }: { children: React.ReactNode }) {
@@ -24,7 +100,7 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
       channel = supabase.channel("online-users-global", {
         config: {
           presence: {
-            key: user.id,
+            key: user.id, // This makes user.id the key in presenceState
           },
         },
       });
@@ -32,16 +108,9 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
       channel
         .on("presence", { event: "sync" }, () => {
           const newState = channel.presenceState();
-          const onlineIds: string[] = [];
-          for (const key in newState) {
-            // @ts-ignore
-            const presenceRecords = newState[key];
-            presenceRecords.forEach((record: any) => {
-              if (record.user_id && !onlineIds.includes(record.user_id)) {
-                onlineIds.push(record.user_id);
-              }
-            });
-          }
+
+          // SIMPLIFIED: Since 'user.id' is the key, just grab the keys!
+          const onlineIds = Object.keys(newState);
           setOnlineUsers(onlineIds);
         })
         .subscribe(async (status: string) => {
@@ -63,7 +132,7 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
         supabase.removeChannel(channel);
       }
     };
-  }, []); // Empty deps — supabase is now a stable module-level singleton
+  }, []);
 
   return (
     <OnlinePresenceContext.Provider value={onlineUsers}>
