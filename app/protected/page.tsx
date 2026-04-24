@@ -31,6 +31,7 @@ export default function DashboardPage() {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("*")
+        .neq("status", "rejected")
         .order("created_at", { ascending: false });
       
       if (error) throw error;

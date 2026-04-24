@@ -24,6 +24,7 @@ export default function ManageDataPage() {
       const { data, error } = await supabase
         .from("inventory_items")
         .select("*")
+        .neq("status", "rejected")
         .order("created_at", { ascending: false })
       
       if (error) throw error
@@ -34,13 +35,19 @@ export default function ManageDataPage() {
   const { data: pendingCount = 0 } = useQuery({
     queryKey: ["admin_pending_count"],
     queryFn: async () => {
-      const { count, error } = await supabase
+      const { count: editCount, error: editError } = await supabase
         .from("pending_edits")
         .select("*", { count: "exact", head: true })
         .eq("status", "pending")
       
-      if (error) throw error
-      return count || 0
+      const { count: newCount, error: newError } = await supabase
+        .from("inventory_items")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending")
+
+      if (editError) throw editError
+      if (newError) throw newError
+      return (editCount || 0) + (newCount || 0)
     },
     enabled: !!isAdmin,
   })
