@@ -410,6 +410,15 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
       sub_location: formData.get("sub_location") || null,
       condition: formData.get("condition") || null,
       tagging_number: formData.get("tagging_number") || null,
+      fund_cluster: formData.get("fund_cluster") || null,
+      office_center: formData.get("office_center") || null,
+      total_cost: formData.get("total_cost") ? parseFloat(formData.get("total_cost") as string) : null,
+      qty_property_card: formData.get("qty_property_card") ? parseInt(formData.get("qty_property_card") as string) : null,
+      qty_physical_count: formData.get("qty_physical_count") ? parseInt(formData.get("qty_physical_count") as string) : null,
+      qty_shortage_overage: formData.get("qty_shortage_overage") ? parseInt(formData.get("qty_shortage_overage") as string) : null,
+      value_shortage_overage: formData.get("value_shortage_overage") ? parseFloat(formData.get("value_shortage_overage") as string) : null,
+      par_ics_received_by: formData.get("par_ics_received_by") || null,
+      location: formData.get("location") || null,
     };
 
     console.log("Payload being sent:", payload);
@@ -788,6 +797,16 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
                     <Input id="article" name="article" defaultValue={currentItem.article} required />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="fund_cluster">Fund Cluster</Label>
+                    <Input id="fund_cluster" name="fund_cluster" defaultValue={currentItem.fund_cluster} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="office_center">Office/Center</Label>
+                    <Input id="office_center" name="office_center" defaultValue={currentItem.office_center} />
+                  </div>
+                </div>
               </div>
 
               {/* Step 2: Specifications & Value */}
@@ -818,6 +837,30 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
                       <Input id="unit_value" name="unit_value" type="number" step="0.01" defaultValue={currentItem.unit_value} required />
                     </div>
                   </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="total_cost">Total Cost (₱)</Label>
+                      <Input id="total_cost" name="total_cost" type="number" step="0.01" defaultValue={currentItem.total_cost} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="qty_property_card">Qty (Card)</Label>
+                      <Input id="qty_property_card" name="qty_property_card" type="number" defaultValue={currentItem.qty_property_card} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="qty_physical_count">Qty (Physical)</Label>
+                      <Input id="qty_physical_count" name="qty_physical_count" type="number" defaultValue={currentItem.qty_physical_count} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="qty_shortage_overage">Shortage/Overage (Qty)</Label>
+                      <Input id="qty_shortage_overage" name="qty_shortage_overage" type="number" defaultValue={currentItem.qty_shortage_overage} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="value_shortage_overage">Shortage/Overage (Value)</Label>
+                      <Input id="value_shortage_overage" name="value_shortage_overage" type="number" step="0.01" defaultValue={currentItem.value_shortage_overage} />
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label>Acquisition Date</Label>
@@ -840,6 +883,9 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
                             selected={acquisitionDate}
                             onSelect={setAcquisitionDate}
                             initialFocus
+                            captionLayout="dropdown"
+                            startMonth={new Date(1980, 0)}
+                            endMonth={new Date(2040, 11)}
                           />
                         </PopoverContent>
                       </Popover>
@@ -867,13 +913,25 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
                       <Input id="actual_user" name="actual_user" defaultValue={currentItem.actual_user} />
                     </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="sub_location">Sub-Location / Whereabouts</Label>
-                    <Input id="sub_location" name="sub_location" defaultValue={currentItem.sub_location} />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="sub_location">Sub-Location / Whereabouts</Label>
+                      <Input id="sub_location" name="sub_location" defaultValue={currentItem.sub_location} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="location">Location</Label>
+                      <Input id="location" name="location" defaultValue={currentItem.location} />
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="par_ics_ro">PAR/ICS NO. (RO)</Label>
-                    <Input id="par_ics_ro" name="par_ics_ro" defaultValue={currentItem.par_ics_ro} />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="par_ics_ro">PAR/ICS NO. (RO)</Label>
+                      <Input id="par_ics_ro" name="par_ics_ro" defaultValue={currentItem.par_ics_ro} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="par_ics_received_by">PAR/ICS Received By</Label>
+                      <Input id="par_ics_received_by" name="par_ics_received_by" defaultValue={currentItem.par_ics_received_by} />
+                    </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="remarks">Remarks</Label>

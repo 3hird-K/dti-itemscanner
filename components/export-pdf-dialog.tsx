@@ -153,6 +153,9 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
                     selected={asOfDate ? parseISO(asOfDate) : undefined}
                     onSelect={(date) => date && setAsOfDate(format(date, "yyyy-MM-dd"))}
                     initialFocus
+                    captionLayout="dropdown"
+                    startMonth={new Date(1980, 0)}
+                    endMonth={new Date(2040, 11)}
                   />
                 </PopoverContent>
               </Popover>
@@ -195,6 +198,9 @@ export function ExportPdfDialog({ inventory }: ExportPdfDialogProps) {
                       }
                     }}
                     initialFocus
+                    captionLayout="dropdown"
+                    startMonth={new Date(1980, 0)}
+                    endMonth={new Date(2040, 11)}
                   />
                 </PopoverContent>
               </Popover>
