@@ -418,6 +418,7 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
       qty_shortage_overage: formData.get("qty_shortage_overage") ? parseInt(formData.get("qty_shortage_overage") as string) : null,
       value_shortage_overage: formData.get("value_shortage_overage") ? parseFloat(formData.get("value_shortage_overage") as string) : null,
       par_ics_received_by: formData.get("par_ics_received_by") || null,
+      par_ics_pos: formData.get("par_ics_pos") || null,
       location: formData.get("location") || null,
     };
 
@@ -923,10 +924,14 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
                       <Input id="location" name="location" defaultValue={currentItem.location} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="par_ics_ro">PAR/ICS NO. (RO)</Label>
                       <Input id="par_ics_ro" name="par_ics_ro" defaultValue={currentItem.par_ics_ro} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="par_ics_pos">PAR/ICS NO. (POs)</Label>
+                      <Input id="par_ics_pos" name="par_ics_pos" defaultValue={currentItem.par_ics_pos} />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="par_ics_received_by">PAR/ICS Received By</Label>
