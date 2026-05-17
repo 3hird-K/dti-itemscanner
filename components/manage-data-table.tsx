@@ -62,6 +62,8 @@ import {
   Plus,
   CheckCircle,
   Calendar as CalendarIcon,
+  Check,
+  SlidersHorizontal,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -531,17 +533,17 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search all columns..."
               value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(event.target.value)}
-              className="pl-9 bg-card border-border rounded-full w-full"
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="pl-10 pr-4 bg-card border-border rounded-full w-full h-10 shadow-sm"
             />
           </div>
           
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full sm:w-[330px] bg-card border-border rounded-full">
+            <SelectTrigger className="w-full sm:w-[330px] bg-card border-border rounded-full h-10 shadow-sm">
               <SelectValue placeholder="Categorize item..." />
             </SelectTrigger>
             <SelectContent className="bg-card border-border">
@@ -552,7 +554,7 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
           </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-card border-border rounded-full">
+            <SelectTrigger className="w-full sm:w-[180px] bg-card border-border rounded-full h-10 shadow-sm">
               <SelectValue placeholder="Filter logically" />
             </SelectTrigger>
             <SelectContent className="bg-card border-border">
@@ -566,11 +568,11 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
         <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 lg:gap-3 justify-end">
           {selectedRowsData.length > 0 && (
             <>
-              <Button onClick={handleBulkPrint} variant="secondary" className="flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary/20">
+              <Button onClick={handleBulkPrint} variant="secondary" className="flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary/20 h-10 rounded-full">
                 <Printer className="w-4 h-4" /> Print {selectedRowsData.length} Label{selectedRowsData.length > 1 && 's'}
               </Button>
               {isAdmin && (
-                <Button onClick={() => setBulkDeleteConfirm(true)} variant="destructive" className="flex items-center gap-2 bg-destructive/10 text-destructive hover:bg-destructive/20 border-none">
+                <Button onClick={() => setBulkDeleteConfirm(true)} variant="destructive" className="flex items-center gap-2 bg-destructive/10 text-destructive hover:bg-destructive/20 border-none h-10 rounded-full">
                   <Trash2 className="w-4 h-4" /> Delete {selectedRowsData.length} Item{selectedRowsData.length > 1 && 's'}
                 </Button>
               )}
@@ -578,31 +580,54 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
           )}
 
           {(isAdmin || isStaff) && (
-            <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2">
+            <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-10 rounded-full px-5">
               <Plus className="w-4 h-4" /> Add Data
             </Button>
           )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="hidden sm:flex items-center gap-2">
-                <Settings2 className="w-4 h-4" /> Columns
+              <Button variant="outline" className="h-10 rounded-full bg-card border-border px-5 py-2 font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-muted/50 cursor-pointer shadow-sm">
+                <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                <span>FILTER</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px] max-h-[300px] overflow-y-auto">
+            <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2 bg-popover border border-border shadow-xl max-h-[350px] overflow-y-auto">
+              <div className="px-3 py-2 text-[10px] font-extrabold text-muted-foreground tracking-widest uppercase border-b border-border/20 mb-1.5 select-none sticky top-0 bg-popover z-10">
+                TOGGLE COLUMNS
+              </div>
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
                 .map((column) => {
+                  const isVisible = column.getIsVisible();
+                  const label = typeof column.columnDef.header === 'string' 
+                    ? column.columnDef.header 
+                    : column.id.replace(/_/g, " ");
+                  
+                  // Protect property_number from being hidden
+                  const isLocked = column.id === "property_number";
+
                   return (
-                    <DropdownMenuCheckboxItem
+                    <DropdownMenuItem
                       key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                      disabled={isLocked}
+                      onClick={(e) => {
+                        if (isLocked) return;
+                        e.preventDefault();
+                        column.toggleVisibility(!isVisible);
+                      }}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wide cursor-pointer transition-colors ${
+                        isLocked ? "opacity-45 cursor-not-allowed" : "hover:bg-muted"
+                      }`}
                     >
-                      {typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id.replace(/_/g, " ")}
-                    </DropdownMenuCheckboxItem>
+                      <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                        {isVisible && <Check className="w-4 h-4 text-foreground stroke-[3px]" />}
+                      </div>
+                      <span className={isVisible ? "text-foreground" : "text-muted-foreground text-[11px]"}>
+                        {label}
+                      </span>
+                    </DropdownMenuItem>
                   );
                 })}
             </DropdownMenuContent>
@@ -632,7 +657,7 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 10 }).map((_, index) => (
-                  <TableRow key={index} className="border-b-[#2c2d3c]">
+                  <TableRow key={index} className="border-b border-border/40">
                     {table.getVisibleLeafColumns().map((column) => (
                       <TableCell key={column.id} className="py-3">
                         <Skeleton className="h-6 w-full opacity-20" />
@@ -644,7 +669,7 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
-                    className="border-b-[#2c2d3c] hover:bg-white/5 transition-colors"
+                    className="border-b border-border/40 hover:bg-muted/30 transition-colors"
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="py-3 whitespace-nowrap">
@@ -667,67 +692,59 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
           </Table>
         </div>
 
-        {/* Pagination Footer */}
-        <div className="flex items-center justify-between py-4 px-6 text-sm text-muted-foreground bg-card border-t border-border">
-          <div>
-            Showing {table.getFilteredRowModel().rows.length} of {data.length} records
+        {/* Table Footer / Pagination */}
+        <div className="flex items-center justify-between py-6 px-6 text-xs text-muted-foreground bg-card border-t border-border/40 font-bold uppercase tracking-wider select-none">
+          
+          {/* Bottom Left: Rows & Total */}
+          <div className="flex items-center gap-6">
+            {/* Rows Dropdown Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1.5 hover:text-foreground cursor-pointer transition-colors bg-muted/40 px-3 py-1.5 rounded-lg border border-border/20 text-[11px] font-bold">
+                  <span>{table.getState().pagination.pageSize} ROWS</span>
+                  <MoreHorizontal className="w-3.5 h-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="bg-popover border border-border rounded-xl p-1 shadow-lg min-w-[100px]">
+                {[10, 20, 30, 40, 50, 100].map((size) => (
+                  <DropdownMenuItem
+                    key={size}
+                    onClick={() => table.setPageSize(size)}
+                    className="px-3 py-2 text-xs font-bold uppercase cursor-pointer rounded-lg hover:bg-muted"
+                  >
+                    {size} Rows
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Total Count */}
+            <span className="text-[11px] text-muted-foreground/60 hidden sm:inline-block">
+              {data.length} TOTAL RECORDS
+            </span>
           </div>
-          <div className="flex items-center space-x-6 lg:space-x-8">
-            <div className="flex items-center space-x-2">
-              <p className="text-sm font-medium">Rows per page</p>
-              <Select
-                value={`${table.getState().pagination.pageSize}`}
-                onValueChange={(value) => table.setPageSize(Number(value))}
-              >
-                <SelectTrigger className="h-8 w-[70px] bg-card border-border">
-                  <SelectValue placeholder={table.getState().pagination.pageSize} />
-                </SelectTrigger>
-                <SelectContent side="top" className="bg-card border-border">
-                  {[10, 20, 30, 40, 50, 100].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
-              {table.getPageCount() || 1}
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                className="h-8 w-8 p-0 lg:flex bg-card"
-                onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
-              >
-                <ChevronsLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                className="h-8 w-8 p-0 bg-card"
+
+          {/* Bottom Right: Page Info & Chevrons */}
+          <div className="flex items-center gap-6">
+            <span className="text-[11px] text-muted-foreground/60 font-mono">
+              PAGE {table.getState().pagination.pageIndex + 1} / {table.getPageCount() || 1}
+            </span>
+            
+            <div className="flex items-center gap-1">
+              <button
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
+                className="h-8 w-8 rounded-lg flex items-center justify-center border border-border/30 bg-muted/20 hover:bg-muted/60 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                className="h-8 w-8 p-0 bg-card"
+                <ChevronLeft className="w-4 h-4 text-foreground" />
+              </button>
+              <button
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
+                className="h-8 w-8 rounded-lg flex items-center justify-center border border-border/30 bg-muted/20 hover:bg-muted/60 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                className="h-8 w-8 p-0 lg:flex bg-card"
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
-              >
-                <ChevronsRight className="h-4 w-4" />
-              </Button>
+                <ChevronRight className="w-4 h-4 text-foreground" />
+              </button>
             </div>
           </div>
         </div>

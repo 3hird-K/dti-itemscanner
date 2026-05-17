@@ -8,6 +8,7 @@ import {
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
+  getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import {
@@ -25,24 +26,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { 
   MoreHorizontal, 
   Edit, 
   Trash2,
   ChevronLeft,
   ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   QrCode,
   Download,
   Search,
+  Check,
+  SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -64,6 +58,16 @@ export function InventoryTable({ data, isLoading = false, isAdmin = false }: Inv
   const [viewingQr, setViewingQr] = useState<any | null>(null);
   const supabase = createClient();
   const queryClient = useQueryClient();
+
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
+    property_number: true,
+    article: true,
+    description: true,
+    end_user: true,
+    unit_value: true,
+    qty_physical_count: true,
+  });
+  const [globalFilter, setGlobalFilter] = useState("");
 
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,54 +150,85 @@ export function InventoryTable({ data, isLoading = false, isAdmin = false }: Inv
     },
   ];
 
-  let resolvedColumns = [...columns];
-  resolvedColumns.push({
-    id: "actions",
-    cell: ({ row }) => {
-      const item = row.original;
-      return (
-        <div className="text-right">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setViewingQr(item)}>
-                <QrCode className="w-4 h-4 mr-2" /> View QR Code
-              </DropdownMenuItem>
-              {isAdmin && (
-                <>
-                  <DropdownMenuItem onClick={() => setEditingItem(item)}>
-                    <Edit className="w-4 h-4 mr-2" /> Edit Item
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
-                    onClick={() => handleDelete(item.id)}
-                    disabled={isDeleting === item.id}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" /> Delete
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )
-    },
-  });
+  const toggleableColumns = [
+    { id: "property_number", label: "Property No.", locked: true },
+    { id: "article", label: "Article" },
+    { id: "description", label: "Description" },
+    { id: "end_user", label: "End-User" },
+    { id: "unit_value", label: "Unit Value" },
+    { id: "qty_physical_count", label: "Qty (Physical)" },
+  ];
 
   const table = useReactTable({
     data,
-    columns: resolvedColumns,
+    columns, // Passed raw columns directly (no action column)
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onGlobalFilterChange: setGlobalFilter,
+    state: {
+      columnVisibility,
+      globalFilter,
+    },
   });
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden shadow-md">
+      {/* Controls: Search & Toggle Columns */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 gap-4 border-b border-border/40 select-none bg-card/50">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search records, locations, or users..."
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="pl-10 pr-4 bg-card border-border rounded-full w-full h-10 shadow-sm"
+          />
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="h-10 rounded-full bg-card border-border px-5 py-2 font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-muted/50 cursor-pointer shadow-sm">
+              <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+              <span>FILTER</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 bg-popover border border-border shadow-xl">
+            <div className="px-3 py-2 text-[10px] font-extrabold text-muted-foreground tracking-widest uppercase border-b border-border/20 mb-1.5 select-none">
+              TOGGLE COLUMNS
+            </div>
+            {toggleableColumns.map((col) => {
+              const isVisible = columnVisibility[col.id] ?? true;
+              return (
+                <DropdownMenuItem
+                  key={col.id}
+                  disabled={col.locked}
+                  onClick={(e) => {
+                    if (col.locked) return;
+                    e.preventDefault();
+                    setColumnVisibility(prev => ({
+                      ...prev,
+                      [col.id]: !prev[col.id]
+                    }));
+                  }}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wide cursor-pointer transition-colors ${
+                    col.locked ? "opacity-45 cursor-not-allowed" : "hover:bg-muted"
+                  }`}
+                >
+                  <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                    {isVisible && <Check className="w-4 h-4 text-foreground stroke-[3px]" />}
+                  </div>
+                  <span className={isVisible ? "text-foreground" : "text-muted-foreground"}>
+                    {col.label}
+                  </span>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <div className="overflow-x-auto">
         <Table>
           <TableHeader className="bg-muted/50 border-b border-border">
@@ -217,7 +252,7 @@ export function InventoryTable({ data, isLoading = false, isAdmin = false }: Inv
           <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={index} className="border-b-[#2c2d3c]">
+                <TableRow key={index} className="border-b border-border/40">
                   {table.getVisibleLeafColumns().map((column) => (
                     <TableCell key={column.id} className="py-4">
                       <Skeleton className="h-5 w-full opacity-20" />
@@ -230,7 +265,7 @@ export function InventoryTable({ data, isLoading = false, isAdmin = false }: Inv
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b-[#2c2d3c] hover:bg-white/5 transition-colors"
+                  className="border-b border-border/40 hover:bg-muted/30 transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-4">
@@ -251,72 +286,58 @@ export function InventoryTable({ data, isLoading = false, isAdmin = false }: Inv
       </div>
 
       {/* Table Footer / Pagination */}
-      <div className="flex items-center justify-between py-4 px-6 text-sm text-muted-foreground bg-card border-t border-border">
-        <div>
-          Showing {table.getFilteredRowModel().rows.length} of {data.length} items
+      <div className="flex items-center justify-between py-6 px-6 text-xs text-muted-foreground bg-card border-t border-border/40 font-bold uppercase tracking-wider select-none">
+        
+        {/* Bottom Left: Rows & Total */}
+        <div className="flex items-center gap-6">
+          {/* Rows Dropdown Selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-1.5 hover:text-foreground cursor-pointer transition-colors bg-muted/40 px-3 py-1.5 rounded-lg border border-border/20 text-[11px] font-bold">
+                <span>{table.getState().pagination.pageSize} ROWS</span>
+                <MoreHorizontal className="w-3.5 h-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="bg-popover border border-border rounded-xl p-1 shadow-lg min-w-[100px]">
+              {[10, 20, 30, 40, 50].map((size) => (
+                <DropdownMenuItem
+                  key={size}
+                  onClick={() => table.setPageSize(size)}
+                  className="px-3 py-2 text-xs font-bold uppercase cursor-pointer rounded-lg hover:bg-muted"
+                >
+                  {size} Rows
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Total Count */}
+          <span className="text-[11px] text-muted-foreground/60 hidden sm:inline-block">
+            {data.length} TOTAL RECORDS
+          </span>
         </div>
-        <div className="flex items-center space-x-6 lg:space-x-8">
-          <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Rows per page</p>
-            <Select
-              value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(value) => {
-                table.setPageSize(Number(value))
-              }}
-            >
-              <SelectTrigger className="h-8 w-[70px] bg-card border-border">
-                <SelectValue placeholder={table.getState().pagination.pageSize} />
-              </SelectTrigger>
-              <SelectContent side="top" className="bg-card border-border text-muted-foreground">
-                {[10, 20, 30, 40, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
-                    {pageSize}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount() || 1}
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex bg-card border-border"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <span className="sr-only">Go to first page</span>
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-8 w-8 p-0 bg-card border-border"
+
+        {/* Bottom Right: Page Info & Chevrons */}
+        <div className="flex items-center gap-6">
+          <span className="text-[11px] text-muted-foreground/60 font-mono">
+            PAGE {table.getState().pagination.pageIndex + 1} / {table.getPageCount() || 1}
+          </span>
+          
+          <div className="flex items-center gap-1">
+            <button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
+              className="h-8 w-8 rounded-lg flex items-center justify-center border border-border/30 bg-muted/20 hover:bg-muted/60 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              <span className="sr-only">Go to previous page</span>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-8 w-8 p-0 bg-card border-border"
+              <ChevronLeft className="w-4 h-4 text-foreground" />
+            </button>
+            <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
+              className="h-8 w-8 rounded-lg flex items-center justify-center border border-border/30 bg-muted/20 hover:bg-muted/60 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              <span className="sr-only">Go to next page</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex bg-card border-border"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              <span className="sr-only">Go to last page</span>
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
+              <ChevronRight className="w-4 h-4 text-foreground" />
+            </button>
           </div>
         </div>
       </div>
@@ -359,6 +380,7 @@ export function InventoryTable({ data, isLoading = false, isAdmin = false }: Inv
           )}
         </DialogContent>
       </Dialog>
+      
       {/* QR Code Single View Modal */}
       <Dialog open={!!viewingQr} onOpenChange={(open) => !open && setViewingQr(null)}>
         <DialogContent className="sm:max-w-md">

@@ -80,7 +80,7 @@ export function StaffEditsTable() {
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow key={index} className="border-b-[#2c2d3c]">
+                  <TableRow key={index} className="border-b border-border/40">
                     {Array.from({ length: 4 }).map((_, cellIdx) => (
                       <TableCell key={cellIdx} className="py-3">
                         <Skeleton className="h-6 w-full opacity-20" />
@@ -90,7 +90,7 @@ export function StaffEditsTable() {
                 ))
               ) : myEdits.length > 0 ? (
                 myEdits.map((edit: any) => (
-                  <TableRow key={edit.id} className="border-b-[#2c2d3c] hover:bg-white/5 transition-colors">
+                  <TableRow key={edit.id} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
                     <TableCell className="font-medium">{edit.inventory_items?.property_number || "-"}</TableCell>
                     <TableCell>{edit.inventory_items?.article || "-"}</TableCell>
                     <TableCell>

@@ -44,7 +44,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="space-y-4 pt-6 pb-2">
+      <SidebarHeader className="space-y-4 pt-6 pb-2 group-data-[collapsible=icon]:px-0">
         <div className="flex items-center gap-3 px-3 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
           <a href="/" className="flex items-center gap-3 w-full overflow-hidden group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:justify-center">
             <div className="flex bg-white p-1.5 rounded-lg border border-white/5 shadow-sm justify-center items-center shrink-0">

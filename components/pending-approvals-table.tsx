@@ -191,7 +191,7 @@ export function PendingApprovalsTable() {
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow key={index} className="border-b-[#2c2d3c]">
+                  <TableRow key={index} className="border-b border-border/40">
                     {Array.from({ length: 5 }).map((_, cellIdx) => (
                       <TableCell key={cellIdx} className="py-3">
                         <Skeleton className="h-6 w-full opacity-20" />
@@ -201,7 +201,7 @@ export function PendingApprovalsTable() {
                 ))
               ) : pendingTasks.length > 0 ? (
                 pendingTasks.map((task: any) => (
-                  <TableRow key={task.id} className="border-b-[#2c2d3c] hover:bg-white/5 transition-colors">
+                  <TableRow key={task.id} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
                     <TableCell className="font-medium">{task.property_number}</TableCell>
                     <TableCell>{task.article}</TableCell>
                     <TableCell>
