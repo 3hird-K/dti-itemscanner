@@ -236,8 +236,117 @@ export function ManageUsersTable({ data, isLoading = false, isAdmin = false }: M
     },
   });
 
+  const totalUsers = data.length;
+  const adminCount = data.filter(u => u.account_type === "admin").length;
+  const staffCount = data.filter(u => u.account_type === "staff").length;
+  const onlineCount = data.filter(u => onlineUserIds.includes(u.id)).length;
+
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-6">
+      {/* Dynamic User Analytics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 select-none">
+        
+        {/* Card 1: Total Users */}
+        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-300 pointer-events-none">
+            <User className="w-24 h-24 stroke-[1.5px]" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold text-muted-foreground tracking-widest uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+              Total Users
+            </div>
+            <div className="text-3xl font-black text-foreground tracking-tight pt-1">
+              {totalUsers}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/10">
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground uppercase tracking-wider">
+              All Roles
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground truncate">
+              System-wide accounts
+            </span>
+          </div>
+        </div>
+
+        {/* Card 2: Administrators */}
+        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-300 pointer-events-none">
+            <Shield className="w-24 h-24 stroke-[1.5px]" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold text-muted-foreground tracking-widest uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              Administrators
+            </div>
+            <div className="text-3xl font-black text-foreground tracking-tight pt-1">
+              {adminCount}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/10">
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-primary/20 text-primary uppercase tracking-wider">
+              Full Access
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground truncate">
+              Administrative users
+            </span>
+          </div>
+        </div>
+
+        {/* Card 3: Staff Members */}
+        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-300 pointer-events-none">
+            <User className="w-24 h-24 stroke-[1.5px]" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold text-muted-foreground tracking-widest uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              Staff Members
+            </div>
+            <div className="text-3xl font-black text-foreground tracking-tight pt-1">
+              {staffCount}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/10">
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-500 uppercase tracking-wider">
+              Standard Access
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground truncate">
+              Office personnel
+            </span>
+          </div>
+        </div>
+
+        {/* Card 4: Online Now */}
+        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-300 pointer-events-none">
+            <span className="relative flex h-24 w-24 opacity-[0.4]">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            </span>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold text-muted-foreground tracking-widest uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Online Now
+            </div>
+            <div className="text-3xl font-black text-foreground tracking-tight pt-1">
+              {onlineCount}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/10">
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-500 uppercase tracking-wider flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+              Active
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground truncate">
+              Currently logged in
+            </span>
+          </div>
+        </div>
+
+      </div>
+
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-md">
         {/* Controls: Search & Toggle Columns */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 gap-4 border-b border-border/40 select-none bg-card/50">

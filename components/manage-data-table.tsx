@@ -64,6 +64,10 @@ import {
   Calendar as CalendarIcon,
   Check,
   SlidersHorizontal,
+  Box,
+  DollarSign,
+  Layers,
+  Hourglass,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -527,8 +531,117 @@ export function ManageDataTable({ data, isLoading = false, isAdmin = false, isSt
 
   const currentItem = isAdding ? {} : editingItem || {};
 
+  const totalItems = data.length;
+  const totalPhysicalQty = data.reduce((sum, item) => sum + Number(item.qty_physical_count || 0), 0);
+  const totalValuation = data.reduce((sum, item) => sum + (Number(item.total_cost) || 0), 0);
+  const formattedValuation = `₱${totalValuation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const pendingApprovalsCount = data.filter(item => String(item.status).toLowerCase() === "pending").length;
+
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-6">
+      {/* Dynamic Asset Analytics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 select-none">
+        
+        {/* Card 1: Registered Items */}
+        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-300 pointer-events-none">
+            <Box className="w-24 h-24 stroke-[1.5px]" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold text-muted-foreground tracking-widest uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+              Registered Items
+            </div>
+            <div className="text-3xl font-black text-foreground tracking-tight pt-1">
+              {totalItems}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/10">
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-violet-500/10 text-violet-500 uppercase tracking-wider">
+              All Categories
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground truncate">
+              Fully tracked assets
+            </span>
+          </div>
+        </div>
+
+        {/* Card 2: Physical Quantity */}
+        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-300 pointer-events-none">
+            <Layers className="w-24 h-24 stroke-[1.5px]" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold text-muted-foreground tracking-widest uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              Physical Qty
+            </div>
+            <div className="text-3xl font-black text-foreground tracking-tight pt-1">
+              {totalPhysicalQty}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/10">
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 uppercase tracking-wider">
+              In Stock
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground truncate">
+              Verified on-hand count
+            </span>
+          </div>
+        </div>
+
+        {/* Card 3: Total Assets Val */}
+        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-300 pointer-events-none">
+            <DollarSign className="w-24 h-24 stroke-[1.5px]" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold text-muted-foreground tracking-widest uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              Total Assets Val
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-foreground tracking-tight pt-1">
+              {formattedValuation}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/10">
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 uppercase tracking-wider">
+              VALUATION
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground truncate">
+              Aggregated net value
+            </span>
+          </div>
+        </div>
+
+        {/* Card 4: Pending Approvals */}
+        <div className="bg-card border border-border/40 rounded-2xl p-6 shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-300 pointer-events-none">
+            <Hourglass className="w-24 h-24 stroke-[1.5px]" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold text-muted-foreground tracking-widest uppercase">
+              <span className={`w-1.5 h-1.5 rounded-full ${pendingApprovalsCount > 0 ? "bg-rose-500 animate-pulse" : "bg-slate-400"}`} />
+              Pending Approvals
+            </div>
+            <div className="text-3xl font-black text-foreground tracking-tight pt-1">
+              {pendingApprovalsCount}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/10">
+            <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+              pendingApprovalsCount > 0 ? "bg-rose-500/10 text-rose-500" : "bg-muted text-muted-foreground"
+            }`}>
+              {pendingApprovalsCount > 0 ? "Action Required" : "Up To Date"}
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground truncate">
+              Requires admin audit
+            </span>
+          </div>
+        </div>
+
+      </div>
+
       {/* Controls & Search */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
